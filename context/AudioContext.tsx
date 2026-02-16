@@ -1,7 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, ReactNode } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { useServer } from './ServerContext';
 import { Track } from '../types';
 
+// Types matching Rust AudioState
+interface RustTrackInfo {
+  id: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration_secs: number;
+  cover_url: string | null;
+}
+
+interface RustAudioState {
+  current_track: RustTrackInfo | null;
+  is_playing: boolean;
+  position_secs: number;
+  duration_secs: number;
+  volume: number;
+  is_muted: boolean;
+  is_loading: boolean;
+  error: string | null;
+}
+
+// Frontend state (matches original interface)
 interface AudioState {
   currentTrack: Track | null;
   isPlaying: boolean;
@@ -43,9 +67,35 @@ interface AudioContextType {
 
 const AudioContext = createContext<AudioContextType | null>(null);
 
+/**
+ * Parse duration string "M:SS" or "H:MM:SS" to seconds
+ */
+function parseDuration(duration: string): number {
+  const parts = duration.split(':').map(Number);
+  if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  } else if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+  return 0;
+}
+
+/**
+ * Convert frontend Track to Rust TrackInfo
+ */
+function toRustTrack(track: Track): RustTrackInfo {
+  return {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    album: track.album,
+    duration_secs: parseDuration(track.duration),
+    cover_url: track.cover || null,
+  };
+}
+
 export function AudioProvider({ children }: { children: ReactNode }) {
   const { api, queueTracks, setQueueTracks } = useServer();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [state, setState] = useState<AudioState>({
     currentTrack: null,
@@ -66,155 +116,135 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [isShuffled, setIsShuffled] = useState(false);
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
 
-  // Internal play function — declared before effects that reference it
-  const playTrackInternal = useCallback((track: Track) => {
-    if (!api || !audioRef.current) return;
+  // Track the current track separately for queue management
+  const currentTrackRef = useRef<Track | null>(null);
 
-    const streamUrl = api.getStreamUrl(track.id);
-    audioRef.current.src = streamUrl;
-    audioRef.current.play().catch(() => {
-      setState(s => ({ ...s, error: 'Failed to start playback', isLoading: false }));
+  // Listen to Rust audio events
+  useEffect(() => {
+    const unlisteners: Promise<UnlistenFn>[] = [];
+
+    // Main state updates from Rust (~4Hz when playing)
+    unlisteners.push(
+      listen<RustAudioState>('audio:state', (event) => {
+        const rustState = event.payload;
+        setState(s => ({
+          ...s,
+          isPlaying: rustState.is_playing,
+          currentTime: rustState.position_secs,
+          duration: rustState.duration_secs,
+          volume: rustState.volume,
+          isMuted: rustState.is_muted,
+          isLoading: rustState.is_loading,
+          error: rustState.error,
+        }));
+      })
+    );
+
+    // Track changed event
+    unlisteners.push(
+      listen<{ track: RustTrackInfo }>('audio:track-changed', (event) => {
+        // Track info comes from Rust, but we maintain the full Track object
+        // from our queue for additional fields (liked, format, etc.)
+        const rustTrack = event.payload.track;
+        const fullTrack = currentTrackRef.current;
+
+        if (fullTrack && fullTrack.id === rustTrack.id) {
+          setState(s => ({ ...s, currentTrack: fullTrack }));
+        }
+      })
+    );
+
+    // Track ended event - handle auto-advance
+    unlisteners.push(
+      listen<{ track_id: string }>('audio:track-ended', () => {
+        // This is handled by the handleTrackEnded function below
+        handleTrackEndedRef.current?.();
+      })
+    );
+
+    // Initial state sync
+    invoke<RustAudioState>('audio_get_state').then((rustState) => {
+      setState(s => ({
+        ...s,
+        isPlaying: rustState.is_playing,
+        currentTime: rustState.position_secs,
+        duration: rustState.duration_secs,
+        volume: rustState.volume,
+        isMuted: rustState.is_muted,
+        isLoading: rustState.is_loading,
+        error: rustState.error,
+      }));
+    }).catch(() => {
+      // Audio engine not ready yet, that's OK
     });
 
-    setState(s => ({
-      ...s,
-      currentTrack: track,
-      isPlaying: true,
-      isLoading: true,
-      error: null,
-      currentTime: 0,
-    }));
-  }, [api]);
-
-  // Initialize audio element once
-  useEffect(() => {
-    const audio = new Audio();
-    audio.volume = state.volume;
-    audioRef.current = audio;
-
-    // Throttle timeupdate to ~2Hz (every 500ms) to reduce re-render cascades.
-    // Each fire creates a new state object and re-renders every consumer
-    // (PlayerCapsule, FullScreenPlayer, QueueView). On Linux/GTK this
-    // competes with scroll compositing, so we keep it as low as possible.
-    let lastTimeUpdate = 0;
-    let rafId: number | null = null;
-    const handleTimeUpdate = () => {
-      const now = performance.now();
-      if (now - lastTimeUpdate < 500) return;
-      lastTimeUpdate = now;
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        setState(s => {
-          // Skip update if time hasn't meaningfully changed (< 0.4s)
-          if (Math.abs(s.currentTime - audio.currentTime) < 0.4) return s;
-          return { ...s, currentTime: audio.currentTime };
-        });
-      });
-    };
-
-    const handleLoadedMetadata = () => {
-      setState(s => ({ ...s, duration: audio.duration, isLoading: false }));
-    };
-
-    const handleEnded = () => {
-      // Placeholder — replaced by the dynamic ended handler effect below
-      setState(s => ({ ...s, isPlaying: false, currentTime: 0 }));
-    };
-
-    const handleError = () => {
-      setState(s => ({ ...s, error: 'Playback failed', isLoading: false, isPlaying: false }));
-    };
-
-    const handleWaiting = () => {
-      setState(s => ({ ...s, isLoading: true }));
-    };
-
-    const handleCanPlay = () => {
-      setState(s => ({ ...s, isLoading: false }));
-    };
-
-    const handlePlay = () => {
-      setState(s => ({ ...s, isPlaying: true }));
-    };
-
-    const handlePause = () => {
-      setState(s => ({ ...s, isPlaying: false }));
-    };
-
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-    audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('error', handleError);
-    audio.addEventListener('waiting', handleWaiting);
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('play', handlePlay);
-    audio.addEventListener('pause', handlePause);
-
     return () => {
-      audio.pause();
-      audio.src = '';
-      if (rafId) cancelAnimationFrame(rafId);
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-      audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('error', handleError);
-      audio.removeEventListener('waiting', handleWaiting);
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('play', handlePlay);
-      audio.removeEventListener('pause', handlePause);
+      unlisteners.forEach(p => p.then(unlisten => unlisten()));
     };
   }, []);
 
-  // Update ended handler when queue changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
+  // Ref for track ended handler (updated when queue changes)
+  const handleTrackEndedRef = useRef<(() => void) | null>(null);
 
-    const handleEnded = () => {
-      // Repeat one: restart current track
-      if (repeatMode === 'one') {
-        if (audio) {
-          audio.currentTime = 0;
-          audio.play().catch(() => {});
-        }
-        return;
+  // Internal play function
+  const playTrackInternal = useCallback((track: Track) => {
+    if (!api) return;
+
+    currentTrackRef.current = track;
+    setState(s => ({ ...s, currentTrack: track }));
+
+    const streamUrl = api.getStreamUrl(track.id);
+    const rustTrack = toRustTrack(track);
+
+    invoke('audio_play_track', {
+      track: rustTrack,
+      sourceUrl: streamUrl,
+    }).catch((err) => {
+      setState(s => ({ ...s, error: String(err), isLoading: false }));
+    });
+  }, [api]);
+
+  // Handle track ended - auto-advance logic
+  const handleTrackEnded = useCallback(() => {
+    // Repeat one: restart current track
+    if (repeatMode === 'one') {
+      const track = currentTrackRef.current;
+      if (track) {
+        playTrackInternal(track);
       }
+      return;
+    }
 
-      if (queueTracks.length === 0) {
-        if (repeatMode === 'all' && playQueue.length > 0) {
-          const firstTrack = playQueue[0];
-          setPlayQueue(playQueue);
-          setQueueIndex(0);
-          playTrackInternal(firstTrack);
-          setQueueTracks(playQueue.slice(1));
-        } else {
-          setState(s => ({ ...s, isPlaying: false, currentTime: 0 }));
-        }
-        return;
+    if (queueTracks.length === 0) {
+      if (repeatMode === 'all' && playQueue.length > 0) {
+        const firstTrack = playQueue[0];
+        setPlayQueue(playQueue);
+        setQueueIndex(0);
+        playTrackInternal(firstTrack);
+        setQueueTracks(playQueue.slice(1));
       }
+      return;
+    }
 
-      let nextTrack: Track;
-      if (isShuffled) {
-        const randomIndex = Math.floor(Math.random() * queueTracks.length);
-        nextTrack = queueTracks[randomIndex];
-        setQueueTracks(prev => prev.filter((_, i) => i !== randomIndex));
-      } else {
-        nextTrack = queueTracks[0];
-        setQueueTracks(prev => prev.slice(1));
-      }
+    let nextTrack: Track;
+    if (isShuffled) {
+      const randomIndex = Math.floor(Math.random() * queueTracks.length);
+      nextTrack = queueTracks[randomIndex];
+      setQueueTracks(prev => prev.filter((_, i) => i !== randomIndex));
+    } else {
+      nextTrack = queueTracks[0];
+      setQueueTracks(prev => prev.slice(1));
+    }
 
-      setPlayQueue(prev => [...prev.slice(0, queueIndex + 1), nextTrack]);
-      setQueueIndex(i => i + 1);
-      playTrackInternal(nextTrack);
-    };
-
-    audio.removeEventListener('ended', handleEnded);
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('ended', handleEnded);
-    };
+    setPlayQueue(prev => [...prev.slice(0, queueIndex + 1), nextTrack]);
+    setQueueIndex(i => i + 1);
+    playTrackInternal(nextTrack);
   }, [queueIndex, playQueue, queueTracks, repeatMode, isShuffled, playTrackInternal, setQueueTracks]);
+
+  // Keep the ref updated
+  useEffect(() => {
+    handleTrackEndedRef.current = handleTrackEnded;
+  }, [handleTrackEnded]);
 
   // Public play function with queue support
   const playTrack = useCallback((track: Track, queue?: Track[]) => {
@@ -227,7 +257,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       setQueueTracks(remaining);
     } else {
       // Single track - preserve existing queue, just play this track now
-      // The current queueTracks will be played after this track
       setPlayQueue([track, ...queueTracks]);
       setQueueIndex(0);
     }
@@ -235,22 +264,16 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [playTrackInternal, setQueueTracks, queueTracks]);
 
   const pause = useCallback(() => {
-    audioRef.current?.pause();
+    invoke('audio_pause').catch(() => {});
   }, []);
 
   const resume = useCallback(() => {
-    audioRef.current?.play().catch(() => {
-      setState(s => ({ ...s, error: 'Failed to resume playback' }));
-    });
+    invoke('audio_resume').catch(() => {});
   }, []);
 
   const togglePlay = useCallback(() => {
-    if (state.isPlaying) {
-      pause();
-    } else if (state.currentTrack) {
-      resume();
-    }
-  }, [state.isPlaying, state.currentTrack, pause, resume]);
+    invoke('audio_toggle_play').catch(() => {});
+  }, []);
 
   const next = useCallback(() => {
     if (queueTracks.length === 0) {
@@ -281,8 +304,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   const previous = useCallback(() => {
     // If more than 3 seconds in, restart current track
-    if (audioRef.current && audioRef.current.currentTime > 3) {
-      audioRef.current.currentTime = 0;
+    if (state.currentTime > 3) {
+      invoke('audio_seek', { timeSecs: 0 }).catch(() => {});
       return;
     }
     // Otherwise go to previous
@@ -291,42 +314,28 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       setQueueIndex(i => i - 1);
       playTrackInternal(prevTrack);
     }
-  }, [queueIndex, playQueue, playTrackInternal]);
+  }, [queueIndex, playQueue, playTrackInternal, state.currentTime]);
 
   const seek = useCallback((time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-    }
+    invoke('audio_seek', { timeSecs: time }).catch(() => {});
   }, []);
 
   const seekPercent = useCallback((percent: number) => {
-    if (audioRef.current && state.duration > 0) {
-      audioRef.current.currentTime = (percent / 100) * state.duration;
-    }
-  }, [state.duration]);
+    invoke('audio_seek_percent', { percent }).catch(() => {});
+  }, []);
 
   const setVolume = useCallback((volume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, volume));
-    if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
-    }
-    setState(s => ({ ...s, volume: clampedVolume, isMuted: clampedVolume === 0 }));
+    invoke('audio_set_volume', { volume: clampedVolume }).catch(() => {});
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (audioRef.current) {
-      if (state.isMuted) {
-        audioRef.current.volume = state.volume || 0.8;
-        setState(s => ({ ...s, isMuted: false }));
-      } else {
-        audioRef.current.volume = 0;
-        setState(s => ({ ...s, isMuted: true }));
-      }
-    }
-  }, [state.isMuted, state.volume]);
+    invoke('audio_toggle_mute').catch(() => {});
+  }, []);
 
   const toggleShuffle = useCallback(() => {
     setIsShuffled(prev => !prev);
+    invoke('audio_toggle_shuffle').catch(() => {});
   }, []);
 
   const cycleRepeat = useCallback(() => {
@@ -335,6 +344,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       if (prev === 'all') return 'one';
       return 'off';
     });
+    invoke('audio_cycle_repeat').catch(() => {});
   }, []);
 
   const value = useMemo<AudioContextType>(() => ({

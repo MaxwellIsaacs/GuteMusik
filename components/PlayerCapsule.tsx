@@ -20,7 +20,10 @@ export const PlayerCapsule: React.FC<PlayerCapsuleProps> = ({ onToast, onExpand,
   const { isLinux } = usePlatform();
   const { state, togglePlay, next, previous, seekPercent, setVolume: setAudioVolume, toggleMute } = useAudio();
   const { currentTrack, isPlaying, currentTime, duration, volume, isMuted } = state;
-  const { toggleStar, queueTracks } = useServer();
+  const { toggleStar, queueTracks, starredTracks } = useServer();
+
+  // Check if current track is starred (source of truth is starredTracks list)
+  const isCurrentTrackLiked = currentTrack ? starredTracks.some(t => t.id === currentTrack.id) : false;
 
   const [showVolume, setShowVolume] = useState(false);
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
@@ -379,16 +382,16 @@ export const PlayerCapsule: React.FC<PlayerCapsuleProps> = ({ onToast, onExpand,
                  <button
                     onClick={async () => {
                       if (!currentTrack) return;
-                      const success = await toggleStar(currentTrack.id, 'song', currentTrack.liked || false);
+                      const success = await toggleStar(currentTrack.id, 'song', isCurrentTrackLiked);
                       if (success) {
-                        onToast(currentTrack.liked ? "Removed from favorites" : "Added to favorites");
+                        onToast(isCurrentTrackLiked ? "Removed from favorites" : "Added to favorites");
                       } else {
                         onToast("Failed to update favorite");
                       }
                     }}
-                    className={`${currentTrack?.liked ? 'text-rose-500' : 'text-white/30 hover:text-white'} transition-colors`}
+                    className={`${isCurrentTrackLiked ? 'text-rose-500' : 'text-white/30 hover:text-white'} transition-colors`}
                  >
-                    <ChromeIcon name="heart" size={18} className={currentTrack?.liked ? 'opacity-100' : 'opacity-60'} />
+                    <ChromeIcon name="heart" size={18} className={isCurrentTrackLiked ? 'opacity-100' : 'opacity-60'} />
                  </button>
                  <button
                     onClick={async () => {
