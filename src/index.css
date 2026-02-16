@@ -1,0 +1,235 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+/* Custom Scrollbar for Webkit */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Hide scrollbar for clean UI but allow scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  background-color: #050505;
+  color: white;
+  overflow: hidden;
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTIST PAGE STYLES
+   Cinematic, immersive artist experience
+═══════════════════════════════════════════════════════════════ */
+
+/* Fade in animation for page load */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+/* Artist detail view - ensure full bleed */
+.artist-detail-view {
+  animation: fade-in 0.8s ease-out forwards;
+}
+
+/* Staggered album grid animation */
+@keyframes album-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.artist-detail-view .grid > div {
+  animation: album-reveal 0.6s ease-out forwards;
+  animation-fill-mode: both;
+}
+
+/* Ambient glow breathing effect */
+@keyframes ambient-breathe {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Hero text reveal */
+@keyframes text-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Subtle float animation for ambient elements */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  50% {
+    transform: translateY(-5px) translateX(-5px);
+  }
+  75% {
+    transform: translateY(-15px) translateX(3px);
+  }
+}
+
+/* Glass shimmer effect on hover */
+@keyframes glass-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.glass-shimmer:hover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: glass-shimmer 1.5s ease-in-out;
+}
+
+/* Smooth image load transition */
+body:not(.linux) .artist-detail-view img {
+  transition: opacity 0.8s ease-out, transform 1.2s ease-out;
+}
+
+/* Enhanced button press effect */
+body:not(.linux) .artist-detail-view button:active {
+  transform: scale(0.97);
+}
+
+/* Album card hover lift */
+body:not(.linux) .artist-detail-view .group:hover {
+  transform: translateY(-4px);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Gradient border glow on featured album */
+@keyframes border-glow {
+  0%, 100% {
+    border-color: rgba(52, 211, 153, 0.1);
+  }
+  50% {
+    border-color: rgba(52, 211, 153, 0.2);
+  }
+}
+
+/* Responsive typography for artist name */
+@media (max-width: 768px) {
+  .artist-detail-view h1 {
+    font-size: clamp(3rem, 15vw, 6rem) !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LINUX / GTK PERFORMANCE OVERRIDES
+   WebKitGTK software-renders backdrop-filter and struggles with
+   compositing layers. These overrides disable the expensive
+   effects globally when the body has the .linux class.
+═══════════════════════════════════════════════════════════════ */
+
+/* Kill all backdrop-filter — WebKitGTK software-renders these */
+body.linux *,
+body.linux *::before,
+body.linux *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Disable all CSS animations and transitions globally for snappy feel */
+body.linux *,
+body.linux *::before,
+body.linux *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.1s !important;
+  transition-delay: 0ms !important;
+}
+
+/* Exempt specific elements that need animation (e.g. playing indicator bars) */
+body.linux .anim-keep,
+body.linux .anim-keep * {
+  animation-duration: revert !important;
+  animation-delay: revert !important;
+}
+
+/* Kill will-change to avoid unnecessary compositing layers */
+body.linux * {
+  will-change: auto !important;
+}
+
+/* Scope paint invalidation on scrollable containers */
+body.linux [data-year],
+body.linux .grid > div {
+  contain: layout style paint;
+}
+
+/* Optimize main scroll container for compositor-driven scrolling */
+body.linux .overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+  overflow-anchor: none;
+}
+
+/* Contain each album card so hover repaints don't cascade to siblings */
+body.linux .group {
+  contain: layout style;
+}
+
+/* Reduce image decode cost — hint the browser to decode off main thread */
+body.linux img[loading="lazy"] {
+  content-visibility: auto;
+  contain-intrinsic-size: 140px 140px;
+}
