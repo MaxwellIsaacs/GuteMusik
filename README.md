@@ -67,7 +67,7 @@ cd gutemusik
 npm install
 npm run tauri:dev
 ```
-/If you are on NixOS, there is a flake.nix [here](https://github.com/MaxwellIsaacs/gutemusik/nix/flake.nix)/
+*If you are on NixOS, there is a flake.nix [here](https://github.com/MaxwellIsaacs/gutemusik/nix/flake.nix)*
 ### Production Build
 
 ```bash
