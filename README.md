@@ -21,25 +21,33 @@ GuteMusik connects to Navidrome, Airsonic, Gonic, or any other Subsonic-compatib
 - Easy playlist creation and editing, synced to your server
 - Plugin system for custom components and rust extensions
 
-### Library
+### Collection
 
 ![Library View](screenshots/library.png)
 
-### Player
+### Full Screen
 
-![Player View](screenshots/player.png)
+![Player View](screenshots/fs.png)
 
-### Search
+### Plugins
 
-![Search View](screenshots/search.png)
+![Settings View](screenshots/plugins.png)
 
 ### Playlists
 
-![Playlists View](screenshots/playlists.png)
+![Search View](screenshots/playlist.png)
+
+### Playlist Creation
+
+![Playlists View](screenshots/playlistcreation.png)
+
+### Queue
+
+![Settings View](screenshots/queue.png)
 
 ### Settings
 
-![Settings View](screenshots/settings.png)
+![Settings View](screenshots/queue.png)
 
 ## Install
 
