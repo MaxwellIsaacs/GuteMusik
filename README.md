@@ -46,6 +46,8 @@ GuteMusik connects to Navidrome, Airsonic, Gonic, or any other Subsonic-compatib
 
 GuteMusik is in alpha. Builds for Linux, macOS, and Windows.
 
+If you are on NixOS, the is a flake.nix __here__
+
 You need a running Subsonic-compatible server.
 
 ### macOS
