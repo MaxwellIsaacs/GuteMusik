@@ -1,7 +1,6 @@
 <p align="center">
   <img src="logo.png" alt="GuteMusik" width="120" />
 </p>
-
 <h1 align="center">GuteMusik</h1>
 
 <p align="center">A fast, cross-platform desktop music player for Subsonic servers.</p>
