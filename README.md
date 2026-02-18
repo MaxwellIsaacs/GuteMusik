@@ -14,12 +14,12 @@ GuteMusik connects to Navidrome, Airsonic, Gonic, or any other Subsonic-compatib
 ## Features
 
 - Browse by album, artist, playlist, or chronologically
-- Native playback of FLAC, MP3, AAC, and more via Rust
-- Full-screen player with album art and lyrics
-- Search across your whole collection
+- Native playback of FLAC, MP3, AAC, and more via Rust. You can also listen to local files
+- Full-screen player with album art and lyrics, and mini player that pops out with queue/lyrics toggle
+- Search across your whole collection and view it in one doom scroll, and export your library to make a cool poster like the one shown below
 - Queue management, favorites, starred albums, the works
 - Easy playlist creation and editing, synced to your server
-- Plugin system for custom components and rust extensions
+- Plugin system for custom components and rust extensions. In the screenshots, anything below the new playlist button is a plugin
 
 ### Collection
 
@@ -43,9 +43,9 @@ GuteMusik connects to Navidrome, Airsonic, Gonic, or any other Subsonic-compatib
 
 ## Install
 
-GuteMusik is in alpha. Builds for Linux, macOS, and Windows.
+GuteMusik is in alpha. Builds for Linux, macOS, and Windows (most likely, I don't have any windows machine to test on).
 
-You need a running Subsonic-compatible server.
+You need a running Subsonic-compatible server. I have a pre configured dockerfile [here](https://github.com/MaxwellIsaacs/gutemusik/extras/navidrome_docker) if you don't have one and want to roll your own very quickly. 
 
 ### macOS
 
