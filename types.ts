@@ -1,4 +1,5 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
+import { ChromeIconName } from './components/ChromeIcon';
 
 export interface Track {
   id: string;
@@ -6,6 +7,7 @@ export interface Track {
   artist: string;
   artistId?: string;
   album: string;
+  albumId?: string;
   duration: string;
   bitrate: string;
   format: string;
@@ -55,4 +57,19 @@ export interface ContextMenuState {
   item: any;
 }
 
-export type ViewState = 'Library' | 'Playlists' | 'Queue' | 'Artist' | 'Album' | 'Settings';
+export type ViewState = 'Library' | 'Playlists' | 'Queue' | 'Artist' | 'Album' | 'Settings' | `Plugin:${string}`;
+
+export interface PluginViewProps {
+  onPlayTrack: (track: Track, queue?: Track[]) => void;
+  onNavigateToAlbum: (id: string) => void;
+  onNavigateToArtist: (id: string) => void;
+  onContextMenu: (e: React.MouseEvent, item: any, type: string) => void;
+  onToast: (msg: string) => void;
+}
+
+export interface PluginDefinition {
+  id: string;
+  label: string;
+  icon: ChromeIconName | React.FC<{ size: number; className?: string }>;
+  view: React.FC<PluginViewProps>;
+}

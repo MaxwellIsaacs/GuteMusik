@@ -103,6 +103,7 @@ export const MiniPlayer: React.FC = () => {
           title: currentTrack.title,
           album: currentTrack.album,
           duration: duration > 0 ? Math.round(duration) : undefined,
+          trackId: currentTrack.id,
         });
         if (result && result.lyrics.length > 0) {
           setLyrics(result.lyrics);

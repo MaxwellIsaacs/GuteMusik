@@ -8,7 +8,7 @@ import React from 'react';
 
 // Map of available chrome icon names
 export type ChromeIconName =
-  | 'accessibility' | 'album' | 'equalizer' | 'fast-forward' | 'fullscreen'
+  | 'accessibility' | 'album' | 'download' | 'equalizer' | 'fast-forward' | 'fullscreen'
   | 'hashtag' | 'headphones' | 'heart' | 'menu' | 'microphone'
   | 'minimize' | 'music-folder' | 'music-note' | 'pause' | 'pip' | 'pip-window' | 'playlist'
   | 'play' | 'power' | 'repeat-one' | 'repeat' | 'rewind'

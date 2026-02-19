@@ -29,9 +29,9 @@ GuteMusik connects to Navidrome, Airsonic, Gonic, or any other Subsonic-compatib
 
 ![Album View](screenshots/album.png)
 
-### Library Filters
+### Temporal Filter
 
-![Library Filters](screenshots/library-filter.png)
+![Temporal Filter](screenshots/library-filter.png)
 
 ### Queue
 

@@ -292,16 +292,45 @@ export interface LyricsFetchOptions {
   title: string;
   album?: string;
   duration?: number;
+  trackId?: string;
   navidromeFetcher?: (artist: string, title: string) => Promise<string | null>;
+}
+
+// In-memory lyrics cache — keyed by trackId, lives until the track changes
+const lyricsCache = new Map<string, LyricsResult | null>();
+
+/** Clear cached lyrics for all tracks except the given one */
+export function prunelyricsCacheExcept(currentTrackId?: string) {
+  if (!currentTrackId) {
+    lyricsCache.clear();
+    return;
+  }
+  for (const key of lyricsCache.keys()) {
+    if (key !== currentTrackId) {
+      lyricsCache.delete(key);
+    }
+  }
 }
 
 /**
  * Fetch lyrics with fallback chain:
- * 1. Navidrome server (if fetcher provided)
- * 2. LRCLIB API
+ * 1. In-memory cache (if trackId provided)
+ * 2. Navidrome server (if fetcher provided)
+ * 3. LRCLIB API
  */
 export async function fetchLyrics(options: LyricsFetchOptions): Promise<LyricsResult | null> {
-  const { artist, title, album, duration, navidromeFetcher } = options;
+  const { artist, title, album, duration, trackId, navidromeFetcher } = options;
+
+  // Return cached result if available
+  if (trackId && lyricsCache.has(trackId)) {
+    console.log('Lyrics served from cache for track', trackId);
+    return lyricsCache.get(trackId)!;
+  }
+
+  // Evict stale entries — only keep the current track cached
+  if (trackId) {
+    prunelyricsCacheExcept(trackId);
+  }
 
   // Try Navidrome first
   if (navidromeFetcher) {
@@ -312,6 +341,7 @@ export async function fetchLyrics(options: LyricsFetchOptions): Promise<LyricsRe
         // Validate that lyrics are real content, not just provider metadata
         if (result.lyrics.length > 0 && isValidLyricsContent(navidromeLyrics, result.lyrics)) {
           console.log('Lyrics found from Navidrome');
+          if (trackId) lyricsCache.set(trackId, result);
           return result;
         } else {
           console.log('Navidrome lyrics appear to be metadata only, trying LRCLIB...');
@@ -328,10 +358,12 @@ export async function fetchLyrics(options: LyricsFetchOptions): Promise<LyricsRe
 
   if (lrclibResult) {
     console.log(`Lyrics found from LRCLIB (${lrclibResult.isSynced ? 'synced' : 'plain'})`);
+    if (trackId) lyricsCache.set(trackId, lrclibResult);
     return lrclibResult;
   }
 
   console.log('No lyrics found from any source');
+  if (trackId) lyricsCache.set(trackId, null);
   return null;
 }
 

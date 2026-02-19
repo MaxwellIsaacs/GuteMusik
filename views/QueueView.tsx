@@ -5,6 +5,7 @@ import { useServer } from '../context/ServerContext';
 import { useAudio } from '../context/AudioContext';
 import { formatTime } from '../utils/formatTime';
 import { ArtistLink } from '../components/ArtistLink';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
 interface QueueViewProps {
     onToast: (msg: string) => void;
@@ -128,7 +129,7 @@ export const QueueView: React.FC<QueueViewProps> = ({ onToast, onContextMenu, on
                                     onClick={togglePlay}
                                 >
                                     <img
-                                        src={currentTrack.cover || "https://picsum.photos/id/10/800/800"}
+                                        src={currentTrack.cover || PLACEHOLDER_COVER}
                                         className="w-full h-full object-cover"
                                         alt={currentTrack.title}
                                     />
@@ -247,11 +248,11 @@ export const QueueView: React.FC<QueueViewProps> = ({ onToast, onContextMenu, on
                                     {/* Art */}
                                     <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
                                         <img
-                                            src={track.cover || `https://picsum.photos/seed/${track.id}/100/100`}
+                                            src={track.cover || PLACEHOLDER_COVER}
                                             className="w-full h-full object-cover"
                                             alt={track.title}
                                             onError={(e) => {
-                                                (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${track.id}/100/100`;
+                                                (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                                             }}
                                         />
                                     </div>

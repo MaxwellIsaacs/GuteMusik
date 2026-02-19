@@ -8,6 +8,7 @@ import { formatTime } from '../utils/formatTime';
 import { AlbumArt } from './AlbumArt';
 import { ArtistLink } from './ArtistLink';
 import { fetchLyrics, findActiveLyricIndex, SyncedLyric } from '../services/lyrics';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
 interface FullScreenPlayerProps {
     onCollapse: () => void;
@@ -82,6 +83,7 @@ export const FullScreenPlayer: React.FC<FullScreenPlayerProps> = ({ onCollapse, 
                     title: currentTrack.title,
                     album: currentTrack.album,
                     duration: durationSeconds,
+                    trackId: currentTrack.id,
                     navidromeFetcher: api ? (artist, title) => api.getLyrics(artist, title) : undefined,
                 });
 
@@ -421,7 +423,7 @@ export const FullScreenPlayer: React.FC<FullScreenPlayerProps> = ({ onCollapse, 
                                     >
                                         <div className="w-9 h-9 overflow-hidden flex-shrink-0 shadow-md shadow-black/10">
                                             <img
-                                                src={track.cover || 'https://picsum.photos/id/10/200/200'}
+                                                src={track.cover || PLACEHOLDER_COVER}
                                                 className="w-full h-full object-cover"
                                                 alt={track.title}
                                                 loading="lazy"

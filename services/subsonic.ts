@@ -57,27 +57,22 @@ export class SubsonicAPI {
   private async buildUrl(endpoint: string, params: Record<string, string> = {}): Promise<string> {
     const url = new URL(`${this.config.url}/rest/${endpoint}`);
     const salt = generateSalt();
+    const token = await md5(this.config.password + salt);
 
-    // Try token-based auth (MD5), fallback to plain password
-    let token: string;
-    try {
-      token = await md5(this.config.password + salt);
-    } catch {
-      // Fallback to plain password auth
-      url.searchParams.set('p', this.config.password);
+    // md5() returns null-hash fallback (raw string) when WebCrypto MD5 unavailable.
+    // Detect that and fall back to plain password auth for compatibility.
+    const isRealHash = token !== (this.config.password + salt);
+
+    if (isRealHash) {
       url.searchParams.set('u', this.config.username);
-      url.searchParams.set('v', this.apiVersion);
-      url.searchParams.set('c', this.clientName);
-      url.searchParams.set('f', 'json');
-      Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.set(key, value);
-      });
-      return url.toString();
+      url.searchParams.set('t', token);
+      url.searchParams.set('s', salt);
+    } else {
+      // Fallback to plain password auth (works with Navidrome)
+      url.searchParams.set('u', this.config.username);
+      url.searchParams.set('p', this.config.password);
     }
 
-    url.searchParams.set('u', this.config.username);
-    url.searchParams.set('t', token);
-    url.searchParams.set('s', salt);
     url.searchParams.set('v', this.apiVersion);
     url.searchParams.set('c', this.clientName);
     url.searchParams.set('f', 'json');
@@ -106,21 +101,36 @@ export class SubsonicAPI {
     return url.toString();
   }
 
-  private async request<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
-    const url = this.buildSimpleUrl(endpoint, params);
-    const response = await fetch(url);
+  private async request<T>(endpoint: string, params: Record<string, string> = {}, retries = 3): Promise<T> {
+    let lastError: Error | null = null;
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const url = await this.buildUrl(endpoint, params);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data: SubsonicResponse<T> = await response.json();
+
+        if (data['subsonic-response'].status === 'failed') {
+          throw new Error(data['subsonic-response'].error?.message || 'Unknown error');
+        }
+
+        return data['subsonic-response'] as T;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        // Don't retry on client errors (4xx) or API errors
+        if (lastError.message.startsWith('HTTP 4')) break;
+        if (attempt < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+        }
+      }
     }
 
-    const data: SubsonicResponse<T> = await response.json();
-
-    if (data['subsonic-response'].status === 'failed') {
-      throw new Error(data['subsonic-response'].error?.message || 'Unknown error');
-    }
-
-    return data['subsonic-response'] as T;
+    throw lastError || new Error('Request failed');
   }
 
   async ping(): Promise<boolean> {
@@ -176,6 +186,7 @@ export class SubsonicAPI {
       artist: song.artist || album.artist || 'Unknown Artist',
       artistId: song.artistId || album.artistId,
       album: album.name || 'Unknown Album',
+      albumId: song.albumId || album.id,
       duration: this.formatDuration(song.duration),
       bitrate: song.bitRate ? `${song.bitRate} kbps` : 'Unknown',
       format: song.suffix?.toUpperCase() || 'Unknown',
@@ -273,6 +284,7 @@ export class SubsonicAPI {
       artist: song.artist || 'Unknown Artist',
       artistId: song.artistId,
       album: song.album || 'Unknown Album',
+      albumId: song.albumId,
       duration: this.formatDuration(song.duration),
       bitrate: song.bitRate ? `${song.bitRate} kbps` : 'Unknown',
       format: song.suffix?.toUpperCase() || 'Unknown',
@@ -312,6 +324,7 @@ export class SubsonicAPI {
       artist: song.artist || 'Unknown Artist',
       artistId: song.artistId,
       album: song.album || 'Unknown Album',
+      albumId: song.albumId,
       duration: this.formatDuration(song.duration),
       bitrate: song.bitRate ? `${song.bitRate} kbps` : 'Unknown',
       format: song.suffix?.toUpperCase() || 'Unknown',
@@ -354,6 +367,7 @@ export class SubsonicAPI {
       artist: song.artist || 'Unknown Artist',
       artistId: song.artistId,
       album: song.album || 'Unknown Album',
+      albumId: song.albumId,
       duration: this.formatDuration(song.duration),
       bitrate: song.bitRate ? `${song.bitRate} kbps` : 'Unknown',
       format: song.suffix?.toUpperCase() || 'Unknown',
@@ -377,24 +391,53 @@ export class SubsonicAPI {
   }
 
   getCoverArtUrl(id: string, size = 300): string {
-    const url = new URL(`${this.config.url}/rest/getCoverArt`);
-    url.searchParams.set('id', id);
-    url.searchParams.set('size', size.toString());
-    url.searchParams.set('u', this.config.username);
-    url.searchParams.set('p', this.config.password);
-    url.searchParams.set('v', this.apiVersion);
-    url.searchParams.set('c', this.clientName);
-    return url.toString();
+    return this.buildSimpleUrl('getCoverArt', { id, size: size.toString() });
   }
 
   getStreamUrl(id: string): string {
-    const url = new URL(`${this.config.url}/rest/stream`);
-    url.searchParams.set('id', id);
-    url.searchParams.set('u', this.config.username);
-    url.searchParams.set('p', this.config.password);
-    url.searchParams.set('v', this.apiVersion);
-    url.searchParams.set('c', this.clientName);
-    return url.toString();
+    return this.buildSimpleUrl('stream', { id });
+  }
+
+  async createPlaylist(name: string): Promise<Playlist> {
+    const data = await this.request<{ playlist: any }>('createPlaylist', { name });
+    const pl = data.playlist;
+    return {
+      id: pl.id,
+      title: pl.name || name,
+      cover: this.getCoverArtUrl(pl.coverArt || pl.id),
+      desc: pl.comment || '',
+      count: pl.songCount || 0,
+    };
+  }
+
+  async deletePlaylist(id: string): Promise<void> {
+    await this.request('deletePlaylist', { id });
+  }
+
+  async addToPlaylist(playlistId: string, songIds: string[]): Promise<void> {
+    // Subsonic API requires repeated songIdToAdd params, not array bracket notation.
+    // We build the URL manually and use append() for the repeated keys.
+    const baseUrl = await this.buildUrl('updatePlaylist', { playlistId });
+    const url = new URL(baseUrl);
+    songIds.forEach(id => {
+      url.searchParams.append('songIdToAdd', id);
+    });
+    const response = await fetch(url.toString());
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (data['subsonic-response']?.status === 'failed') {
+      throw new Error(data['subsonic-response'].error?.message || 'Failed to add to playlist');
+    }
+  }
+
+  async removeFromPlaylist(playlistId: string, songIndexes: number[]): Promise<void> {
+    const params: Record<string, string> = { playlistId };
+    songIndexes.forEach((idx, i) => {
+      params[`songIndexToRemove[${i}]`] = idx.toString();
+    });
+    await this.request('updatePlaylist', params);
   }
 
   async getLyrics(artist: string, title: string): Promise<string | null> {
@@ -436,6 +479,7 @@ export class SubsonicAPI {
       artist: song.artist || 'Unknown Artist',
       artistId: song.artistId,
       album: song.album || 'Unknown Album',
+      albumId: song.albumId,
       duration: this.formatDuration(song.duration),
       bitrate: song.bitRate ? `${song.bitRate} kbps` : 'Unknown',
       format: song.suffix?.toUpperCase() || 'Unknown',

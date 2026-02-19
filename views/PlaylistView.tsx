@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { HardDrives, CircleNotch, CloudSlash, PencilSimple, Check, X, SpeakerHigh, ArrowsClockwise } from '@phosphor-icons/react';
+import { HardDrives, CircleNotch, CloudSlash, PencilSimple, Check, X, SpeakerHigh, ArrowsClockwise, Trash, XCircle, MusicNotesPlus } from '@phosphor-icons/react';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 import { ChromeIcon } from '../components/ChromeIcon';
 import { useServer } from '../context/ServerContext';
 import { useAudio } from '../context/AudioContext';
@@ -13,10 +14,11 @@ interface PlaylistViewProps {
   onContextMenu: (e: React.MouseEvent, item: any, type: string) => void;
   onToast: (msg: string) => void;
   onSelectPlaylist: (id: string) => void;
+  onOpenAddMusic?: (playlist: Playlist) => void;
 }
 
-export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTrack, onNavigateToArtist, onContextMenu, onToast, onSelectPlaylist }) => {
-  const { state, api, playlists, isLoadingPlaylists, refreshPlaylists, updatePlaylistInfo, toggleStar } = useServer();
+export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTrack, onNavigateToArtist, onContextMenu, onToast, onSelectPlaylist, onOpenAddMusic }) => {
+  const { state, api, playlists, isLoadingPlaylists, refreshPlaylists, updatePlaylistInfo, toggleStar, deletePlaylist, removeFromPlaylist } = useServer();
   const { state: audioState } = useAudio();
   const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
@@ -25,6 +27,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTr
   const [editingName, setEditingName] = useState('');
   const [editingDesc, setEditingDesc] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const currentTrackId = audioState.currentTrack?.id;
   const isPlaying = audioState.isPlaying;
@@ -159,7 +162,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTr
                                   className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-200"
                                   alt={pl.title}
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${pl.id}/400/400`;
+                                    (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                                   }}
                               />
                           </div>
@@ -254,7 +257,7 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTr
                  className="w-full h-full object-cover"
                  alt="Playlist Cover"
                  onError={(e) => {
-                   (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${playlist.id}/400/400`;
+                   (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                  }}
                />
                <div className="absolute inset-0 bg-white/5 mix-blend-overlay"></div>
@@ -322,10 +325,54 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTr
               <button onClick={() => { if (playlistTracks.length > 0) onPlayTrack(playlistTracks[0], playlistTracks); }} className="flex-1 py-4 bg-white text-black rounded-full font-bold text-xs uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.15)]">
                 Play All
               </button>
+              <button
+                onClick={() => onOpenAddMusic?.(playlist)}
+                className="w-14 h-14 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white"
+                title="Add music"
+              >
+                <MusicNotesPlus size={20} weight="light" />
+              </button>
               <button onClick={() => onToast("Downloading Playlist...")} className="w-14 h-14 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white">
-                <ChromeIcon name="fast-forward" size={20} />
+                <ChromeIcon name="download" size={20} />
               </button>
             </div>
+
+            {/* Delete playlist */}
+            {confirmDeleteId === playlistId ? (
+              <div className="mt-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl space-y-3">
+                <p className="text-red-400 text-sm text-center">Delete this playlist?</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await deletePlaylist(playlistId!);
+                        onToast('Playlist deleted');
+                        onSelectPlaylist('');
+                        setConfirmDeleteId(null);
+                      } catch {
+                        onToast('Failed to delete playlist');
+                      }
+                    }}
+                    className="flex-1 py-2 bg-red-500/20 text-red-400 rounded-lg font-bold text-xs hover:bg-red-500/30 transition-colors"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    className="flex-1 py-2 bg-white/10 text-white rounded-lg font-bold text-xs hover:bg-white/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDeleteId(playlistId!)}
+                className="mt-4 w-full py-3 border border-white/10 text-white/30 rounded-full text-xs font-bold uppercase hover:text-red-400 hover:border-red-500/30 transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash size={14} weight="light" /> Delete Playlist
+              </button>
+            )}
          </div>
       </div>
 
@@ -368,11 +415,11 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTr
                       {/* Album art per track */}
                       <div className="w-10 h-10 rounded overflow-hidden bg-neutral-800 flex-shrink-0">
                           <img
-                              src={track.cover || `https://picsum.photos/seed/${track.id}/100/100`}
+                              src={track.cover || PLACEHOLDER_COVER}
                               className="w-full h-full object-cover"
                               alt={track.title}
                               onError={(e) => {
-                                  (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${track.id}/100/100`;
+                                  (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                               }}
                           />
                       </div>
@@ -410,6 +457,24 @@ export const PlaylistView: React.FC<PlaylistViewProps> = ({ playlistId, onPlayTr
                           className={`w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors ${track.liked ? 'text-rose-500' : 'text-white/20 hover:text-white opacity-0 group-hover:opacity-100'}`}
                       >
                           <ChromeIcon name="heart" size={14} className={track.liked ? 'opacity-100' : 'opacity-50'} />
+                      </button>
+
+                      {/* Remove from playlist */}
+                      <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await removeFromPlaylist(playlistId!, [i]);
+                              setPlaylistTracks(prev => prev.filter((_, idx) => idx !== i));
+                              onToast("Removed from playlist");
+                            } catch {
+                              onToast("Failed to remove track");
+                            }
+                          }}
+                          className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100"
+                          title="Remove from playlist"
+                      >
+                          <XCircle size={14} weight="light" />
                       </button>
                    </div>
                  );

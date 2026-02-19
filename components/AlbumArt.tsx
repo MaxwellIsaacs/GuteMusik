@@ -3,6 +3,7 @@ import { X, SpinnerGap } from '@phosphor-icons/react';
 import { ChromeIcon } from './ChromeIcon';
 import { useAlbumCover } from '../hooks/useAlbumCover';
 import { usePlatform } from '../hooks/usePlatform';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
 interface AlbumArtProps {
   serverCover?: string;
@@ -75,7 +76,7 @@ export const AlbumArt: React.FC<AlbumArtProps> = ({
         decoding="async"
         onError={(e) => {
           const img = e.target as HTMLImageElement;
-          img.src = `https://picsum.photos/seed/${trackId || 'default'}/400/400`;
+          img.src = PLACEHOLDER_COVER;
         }}
       />
 
@@ -107,7 +108,7 @@ export const AlbumArt: React.FC<AlbumArtProps> = ({
             {isSaving ? (
               <SpinnerGap size={12} className="animate-spin" />
             ) : (
-              <ChromeIcon name="fast-forward" size={12} />
+              <ChromeIcon name="download" size={12} />
             )}
             Save
           </button>

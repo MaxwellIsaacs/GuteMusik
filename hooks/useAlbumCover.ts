@@ -3,8 +3,7 @@ import {
   fetchAlbumCover as fetchAlbumCoverAggregated,
   type SourceInfo,
 } from '../services/aggregator';
-
-const DEFAULT_PLACEHOLDER = 'https://picsum.photos/seed/default/400/400';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
 // Local cache for quick access
 const coverCache = new Map<string, { url: string; source: SourceInfo | null }>();
@@ -50,9 +49,7 @@ export function useAlbumCover(
   album: string | undefined,
   trackId?: string
 ): AlbumCoverResult {
-  const placeholder = trackId
-    ? `https://picsum.photos/seed/${trackId}/400/400`
-    : DEFAULT_PLACEHOLDER;
+  const placeholder = PLACEHOLDER_COVER;
 
   const [state, setState] = useState<AlbumCoverResult>(() => {
     // Check if server cover is valid

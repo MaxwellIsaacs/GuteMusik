@@ -13,10 +13,11 @@ interface PlayerCapsuleProps {
   onToast: (msg: string) => void;
   onExpand?: () => void;
   onNavigateToArtist?: (id: string) => void;
+  onNavigateToAlbum?: (id: string) => void;
   className?: string;
 }
 
-export const PlayerCapsule: React.FC<PlayerCapsuleProps> = ({ onToast, onExpand, onNavigateToArtist, className = '' }) => {
+export const PlayerCapsule: React.FC<PlayerCapsuleProps> = ({ onToast, onExpand, onNavigateToArtist, onNavigateToAlbum, className = '' }) => {
   const { isLinux } = usePlatform();
   const { state, togglePlay, next, previous, seekPercent, setVolume: setAudioVolume, toggleMute } = useAudio();
   const { currentTrack, isPlaying, currentTime, duration, volume, isMuted } = state;
@@ -320,9 +321,8 @@ export const PlayerCapsule: React.FC<PlayerCapsuleProps> = ({ onToast, onExpand,
 
             {/* Left: Art & Controls */}
             <div className="flex items-center gap-4 pl-1" onClick={(e) => e.stopPropagation()}>
-                <div className={`w-12 h-12 bg-neutral-900 rounded-full overflow-hidden relative flex-shrink-0 border border-white/5 ${isLinux ? '' : 'group-hover:border-white/10 transition-colors'}`}>
-                    <img src={albumArt} className={`w-full h-full object-cover opacity-80 ${!isLinux && isPlaying ? 'animate-[spin_8s_linear_infinite]' : ''}`} alt="Album Art" />
-                    <div className="absolute inset-0 m-auto w-2 h-2 bg-[#050505] rounded-full border border-white/10"></div>
+                <div className={`w-12 h-12 bg-neutral-900 rounded-md overflow-hidden flex-shrink-0 border border-white/5 ml-3 ${isLinux ? '' : 'group-hover:border-white/10 transition-colors'}`}>
+                    <img src={albumArt} className="w-full h-full object-cover" alt="Album Art" />
                 </div>
 
                 {/* Minimal Controls */}
@@ -345,7 +345,16 @@ export const PlayerCapsule: React.FC<PlayerCapsuleProps> = ({ onToast, onExpand,
             {/* Middle: Track Info */}
             <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
                 <div className="flex items-baseline gap-3">
-                    <span className="font-medium text-white text-sm truncate">{trackTitle}</span>
+                    {currentTrack?.albumId && onNavigateToAlbum ? (
+                        <span
+                            className="font-medium text-white text-sm truncate cursor-pointer hover:underline"
+                            onClick={(e) => { e.stopPropagation(); onNavigateToAlbum(currentTrack.albumId!); }}
+                        >
+                            {trackTitle}
+                        </span>
+                    ) : (
+                        <span className="font-medium text-white text-sm truncate">{trackTitle}</span>
+                    )}
                     <span className="text-white/40 text-xs truncate flex-shrink-0">
                       {currentTrack && onNavigateToArtist ? (
                         <ArtistLink artistName={currentTrack.artist} artistId={currentTrack.artistId} onNavigate={onNavigateToArtist} />

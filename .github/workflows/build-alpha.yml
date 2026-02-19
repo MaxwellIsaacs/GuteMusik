@@ -1,0 +1,74 @@
+name: Build Alpha Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*-alpha*'
+
+env:
+  # Alpha builds without plugins
+  VITE_ENABLE_PLUGINS: 'false'
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri app (no plugins)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__-alpha
+          releaseName: 'GuteMusik v__VERSION__ Alpha'
+          releaseBody: 'Alpha release of GuteMusik - a beautiful music player for your library.'
+          releaseDraft: true
+          prerelease: true
+          args: --target universal-apple-darwin
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri app (no plugins)
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__-alpha
+          releaseName: 'GuteMusik v__VERSION__ Alpha'
+          releaseBody: 'Alpha release of GuteMusik - a beautiful music player for your library.'
+          releaseDraft: true
+          prerelease: true

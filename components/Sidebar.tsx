@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from '@phosphor-icons/react';
 import { ChromeIcon, ChromeIconName } from './ChromeIcon';
-import { ViewState } from '../types';
+import { ViewState, PluginDefinition } from '../types';
 import { usePlatform } from '../hooks/usePlatform';
 import { useServer } from '../context/ServerContext';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -10,9 +10,59 @@ interface SidebarProps {
   activeTab: ViewState;
   onNavigate: (view: ViewState) => void;
   onNewPlaylist: () => void;
+  plugins?: PluginDefinition[];
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, onNewPlaylist }) => {
+// ── Extracted so React sees a stable component identity across renders ──
+
+const NavItem: React.FC<{
+  label: string; iconName: ChromeIconName; active: boolean; collapsed: boolean; onClick: () => void;
+}> = ({ label, iconName, active, collapsed, onClick }) => (
+  <button
+    onClick={(e) => { e.stopPropagation(); onClick(); }}
+    title={collapsed ? label : undefined}
+    className={`w-full rounded-xl flex items-center group
+      ${collapsed ? 'py-3 justify-center' : 'px-4 py-3 gap-4'}
+      ${active ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' : 'text-white/50 hover:text-white hover:bg-white/5'}
+    `}
+  >
+    <ChromeIcon name={iconName} size={18} className={`flex-shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
+    {!collapsed && (
+      <span className={`text-sm font-medium tracking-wide whitespace-nowrap ${active ? 'opacity-100' : 'opacity-80'}`}>
+        {label}
+      </span>
+    )}
+  </button>
+);
+
+const PluginNavItem: React.FC<{
+  plugin: PluginDefinition; active: boolean; collapsed: boolean; onNavigate: (view: ViewState) => void;
+}> = ({ plugin, active, collapsed, onNavigate }) => {
+  const IconComponent = typeof plugin.icon === 'string' ? null : plugin.icon;
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onNavigate(`Plugin:${plugin.id}`); }}
+      title={collapsed ? plugin.label : undefined}
+      className={`w-full rounded-xl flex items-center group
+        ${collapsed ? 'py-3 justify-center' : 'px-4 py-3 gap-4'}
+        ${active ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' : 'text-white/50 hover:text-white hover:bg-white/5'}
+      `}
+    >
+      {typeof plugin.icon === 'string' ? (
+        <ChromeIcon name={plugin.icon} size={18} className={`flex-shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
+      ) : (
+        IconComponent && <IconComponent size={18} className={`flex-shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
+      )}
+      {!collapsed && (
+        <span className={`text-sm font-medium tracking-wide whitespace-nowrap ${active ? 'opacity-100' : 'opacity-80'}`}>
+          {plugin.label}
+        </span>
+      )}
+    </button>
+  );
+};
+
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, onNewPlaylist, plugins = [] }) => {
   const { isLinux } = usePlatform();
   const { state } = useServer();
   const [collapsed, setCollapsed] = useState(false);
@@ -21,24 +71,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, onNewPl
     if (!state.serverUrl) return 'Disconnected';
     try { return new URL(state.serverUrl).host; } catch { return state.serverUrl; }
   };
-
-  const NavItem = ({ label, iconName, active, onClick }: { label: string; iconName: ChromeIconName; active: boolean; onClick: () => void }) => (
-    <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      title={collapsed ? label : undefined}
-      className={`w-full rounded-xl flex items-center group
-        ${collapsed ? 'py-3 justify-center' : 'px-4 py-3 gap-4'}
-        ${active ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' : 'text-white/50 hover:text-white hover:bg-white/5'}
-      `}
-    >
-      <ChromeIcon name={iconName} size={18} className={`flex-shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
-      {!collapsed && (
-        <span className={`text-sm font-medium tracking-wide whitespace-nowrap ${active ? 'opacity-100' : 'opacity-80'}`}>
-          {label}
-        </span>
-      )}
-    </button>
-  );
 
   return (
     <aside
@@ -54,10 +86,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, onNewPl
       </div>
 
       <nav className={`flex flex-col gap-2 flex-1 ${collapsed ? 'px-3' : 'pl-4'}`}>
-        <NavItem label="Library" iconName="music-note" active={activeTab === 'Library'} onClick={() => onNavigate('Library')} />
-        <NavItem label="Playlists" iconName="album" active={activeTab === 'Playlists'} onClick={() => onNavigate('Playlists')} />
-        <NavItem label="Artist" iconName="microphone" active={activeTab === 'Artist'} onClick={() => onNavigate('Artist')} />
-        <NavItem label="Queue" iconName="playlist" active={activeTab === 'Queue'} onClick={() => onNavigate('Queue')} />
+        <NavItem label="Library" iconName="music-note" active={activeTab === 'Library'} collapsed={collapsed} onClick={() => onNavigate('Library')} />
+        <NavItem label="Playlists" iconName="album" active={activeTab === 'Playlists'} collapsed={collapsed} onClick={() => onNavigate('Playlists')} />
+        <NavItem label="Artist" iconName="microphone" active={activeTab === 'Artist'} collapsed={collapsed} onClick={() => onNavigate('Artist')} />
+        <NavItem label="Queue" iconName="playlist" active={activeTab === 'Queue'} collapsed={collapsed} onClick={() => onNavigate('Queue')} />
 
         <div className={`my-6 h-[1px] bg-white/10 ${collapsed ? 'w-8 mx-auto' : 'w-12 ml-4'}`} />
 
@@ -74,6 +106,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onNavigate, onNewPl
             {!collapsed && <span>New Playlist</span>}
           </button>
         </div>
+
+        {plugins.length > 0 && (
+          <>
+            <div className={`my-6 h-[1px] bg-white/10 ${collapsed ? 'w-8 mx-auto' : 'w-12 ml-4'}`} />
+            {plugins.map((plugin) => (
+              <PluginNavItem key={plugin.id} plugin={plugin} active={activeTab === `Plugin:${plugin.id}`} collapsed={collapsed} onNavigate={onNavigate} />
+            ))}
+          </>
+        )}
       </nav>
 
       {/* Server Status */}

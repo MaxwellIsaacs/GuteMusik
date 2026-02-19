@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { usePlatform } from './hooks/usePlatform';
 import { ArrowLeft, ArrowRight, X, ArrowRight as ArrowRightIcon } from '@phosphor-icons/react';
 import { ChromeIcon } from './components/ChromeIcon';
@@ -7,6 +7,7 @@ import { PlayerCapsule } from './components/PlayerCapsule';
 import { FullScreenPlayer } from './components/FullScreenPlayer';
 import { Toast } from './components/ui/Toast';
 import { ContextMenu } from './components/ui/ContextMenu';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LibraryView } from './views/LibraryView';
 import { PlaylistView } from './views/PlaylistView';
 import { QueueView } from './views/QueueView';
@@ -14,14 +15,86 @@ import { ArtistView } from './views/ArtistView';
 import { AlbumView } from './views/AlbumView';
 import { SearchView } from './views/SearchView';
 import { ServerConfig } from './views/ServerConfig';
-import { ViewState, ContextMenuState } from './types';
+import { AddMusicWizard } from './views/AddMusicWizard';
+import { ViewState, ContextMenuState, Playlist, PluginDefinition } from './types';
 import { useAudio } from './context/AudioContext';
 import { useServer } from './context/ServerContext';
+import { builtinPlugins } from './plugins';
+import { initPluginAPI, loadInstalledPlugins, importPlugin, removePlugin, getDynamicPlugins, getInstalledPlugins } from './services/pluginLoader';
+
+const DISABLED_PLUGINS_KEY = 'gutemusik:disabled-plugins';
+
+function loadStringArray(key: string): string[] {
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+}
+
+// Initialize plugin API once at module load
+initPluginAPI();
+
+const NewPlaylistWizard: React.FC<{ isLinux: boolean; onClose: () => void; onCreate: (name: string) => void }> = ({ isLinux, onClose, onCreate }) => {
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+  const [step, setStep] = useState(1);
+
+  return (
+    <div className={`absolute inset-0 z-[100] flex items-center justify-center ${isLinux ? 'bg-black/90' : 'bg-black/80 backdrop-blur-xl'} p-8`} onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-3xl p-12 relative shadow-2xl overflow-hidden">
+        <button onClick={onClose} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors"><X size={24} weight="light" /></button>
+        {step === 1 ? (
+          <div className="animate-in slide-in-from-right-8 fade-in duration-500">
+            <h2 className="text-sm font-bold tracking-[0.2em] text-white/50 uppercase mb-4">Step 01</h2>
+            <h1 className="text-5xl font-medium text-white mb-8 tracking-tighter">Name your creation.</h1>
+            <input
+              autoFocus
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && name.trim()) setStep(2); }}
+              placeholder="My Playlist..."
+              className="w-full bg-transparent border-b border-white/20 text-4xl text-white placeholder:text-white/20 pb-4 focus:outline-none focus:border-white transition-colors"
+            />
+            <div className="mt-12 flex justify-end">
+              <button
+                onClick={() => { if (name.trim()) setStep(2); }}
+                disabled={!name.trim()}
+                className="px-8 py-4 bg-white text-black rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100"
+              >
+                Next <ArrowRightIcon size={18} weight="bold" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="animate-in slide-in-from-right-8 fade-in duration-500">
+            <h2 className="text-sm font-bold tracking-[0.2em] text-white/50 uppercase mb-4">Step 02</h2>
+            <h1 className="text-5xl font-medium text-white mb-8 tracking-tighter">Describe it.</h1>
+            <textarea
+              autoFocus
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder="Optional description..."
+              rows={3}
+              className="w-full bg-transparent border-b border-white/20 text-2xl text-white placeholder:text-white/20 pb-4 focus:outline-none focus:border-white transition-colors resize-none"
+            />
+            <div className="mt-12 flex justify-between">
+              <button onClick={() => setStep(1)} className="px-6 py-4 text-white/40 hover:text-white font-bold transition-colors">Back</button>
+              <button
+                onClick={() => onCreate(name.trim())}
+                className="px-8 py-4 bg-white text-black rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform"
+              >
+                Finish <ArrowRightIcon size={18} weight="bold" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const App = () => {
   const { isLinux } = usePlatform();
-  const { state: audioState, playTrack, togglePlay } = useAudio();
-  const { searchQuery, searchResults, isSearching, search, clearSearch, addToQueue, toggleStar } = useServer();
+  const { state: audioState, playTrack, togglePlay, next: nextTrack, previous: previousTrack, toggleMute, setVolume } = useAudio();
+  const { searchQuery, searchResults, isSearching, search, clearSearch, addToQueue, toggleStar, albums, playlists, createPlaylist, addToPlaylist } = useServer();
   const isPlaying = audioState.isPlaying;
 
   // Apply Linux performance class to body for global CSS overrides
@@ -31,6 +104,20 @@ const App = () => {
     }
     return () => { document.body.classList.remove('linux'); };
   }, [isLinux]);
+
+  // Plugin management state
+  const [disabledPlugins, setDisabledPlugins] = useState<string[]>(() => loadStringArray(DISABLED_PLUGINS_KEY));
+  const [dynamicPlugins, setDynamicPlugins] = useState<PluginDefinition[]>([]);
+
+  // Load dynamic plugins on mount
+  useEffect(() => {
+    const loaded = loadInstalledPlugins();
+    setDynamicPlugins(loaded);
+  }, []);
+
+  // Merge built-in and dynamic plugins
+  const plugins = useMemo(() => [...builtinPlugins, ...dynamicPlugins], [dynamicPlugins]);
+  const enabledPlugins = useMemo(() => plugins.filter(p => !disabledPlugins.includes(p.id)), [plugins, disabledPlugins]);
 
   // Search state
   const [searchInput, setSearchInput] = useState('');
@@ -68,6 +155,7 @@ const App = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [addMusicPlaylist, setAddMusicPlaylist] = useState<Playlist | null>(null);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | undefined>(undefined);
   const [selectedArtistId, setSelectedArtistId] = useState<string | undefined>(undefined);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | undefined>(undefined);
@@ -90,6 +178,44 @@ const App = () => {
     setToastMessage(message);
     setTimeout(() => setToastMessage(null), 3000);
   }, []);
+
+  // Plugin action handlers (need showToast above)
+  const handleTogglePlugin = useCallback((id: string) => {
+    setDisabledPlugins(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      localStorage.setItem(DISABLED_PLUGINS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const handleDeletePlugin = useCallback((id: string) => {
+    // Check if it's a dynamic plugin (can be removed) or built-in (just disable)
+    const isBuiltin = builtinPlugins.some(p => p.id === id);
+    if (isBuiltin) {
+      // Can't delete built-in plugins, just disable them
+      setDisabledPlugins(prev => {
+        const next = prev.includes(id) ? prev : [...prev, id];
+        localStorage.setItem(DISABLED_PLUGINS_KEY, JSON.stringify(next));
+        return next;
+      });
+      showToast('Built-in plugin disabled');
+    } else {
+      // Remove dynamic plugin
+      removePlugin(id);
+      setDynamicPlugins(getDynamicPlugins());
+      showToast('Plugin removed');
+    }
+  }, [showToast]);
+
+  const handleImportPlugin = useCallback(async (file: File) => {
+    const result = await importPlugin(file);
+    if (result.success && result.plugin) {
+      setDynamicPlugins(getDynamicPlugins());
+      showToast(`Installed: ${result.plugin.name}`);
+    } else {
+      showToast(result.error || 'Failed to import plugin');
+    }
+  }, [showToast]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, item: any, type: string) => {
     e.preventDefault();
@@ -143,7 +269,7 @@ const App = () => {
   }, [navIndex, navHistory]);
 
   // Context menu action handler
-  const handleContextAction = useCallback((action: string, item: any) => {
+  const handleContextAction = useCallback(async (action: string, item: any, extra?: any) => {
     switch (action) {
       case 'Play Now':
         if (item.duration) { // It's a track
@@ -166,18 +292,54 @@ const App = () => {
           showToast(item.liked ? `Removed from favorites` : `Added to favorites`);
         }
         break;
+      case 'Add to Playlist':
+        if (extra?.playlistId && item.id) {
+          try {
+            await addToPlaylist(extra.playlistId, [item.id]);
+            showToast(`Added to ${extra.playlistName || 'playlist'}`);
+          } catch {
+            showToast('Failed to add to playlist');
+          }
+        }
+        break;
+      case 'Download':
+        navigate('Plugin:downloader' as ViewState);
+        showToast(`Opening downloader...`);
+        break;
       default:
         showToast(`${action}: ${item.title || 'Item'}`);
     }
-  }, [playTrack, addToQueue, toggleStar, showToast]);
+  }, [playTrack, addToQueue, addToPlaylist, toggleStar, showToast, navigate]);
 
   // Keyboard Shortcuts (stable handler using refs)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT') return;
-      if (e.code === 'Space') {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return;
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          nextTrack();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          previousTrack();
+          break;
+        case 'BracketRight':
+          e.preventDefault();
+          setVolume(Math.min(1, audioState.volume + 0.05));
+          break;
+        case 'BracketLeft':
+          e.preventDefault();
+          setVolume(Math.max(0, audioState.volume - 0.05));
+          break;
+      }
+      if (e.key === 'm' || e.key === 'M') {
         e.preventDefault();
-        togglePlay();
+        toggleMute();
       }
       if (e.key === 'Escape' && isPlayerExpandedRef.current) {
         setIsPlayerExpanded(false);
@@ -185,7 +347,7 @@ const App = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlay]);
+  }, [togglePlay, nextTrack, previousTrack, toggleMute, setVolume, audioState.volume]);
 
   // Render View Switcher
   const renderView = () => {
@@ -202,10 +364,11 @@ const App = () => {
     switch (activeTab) {
       case 'Library':
         return <LibraryView
-            onPlayAlbum={(id) => { showToast(`Playing Album ${id}`); }}
+            onPlayAlbum={(id) => { const album = albums.find(a => a.id === id); showToast(`Playing: ${album?.title || 'Album'}`); }}
             onNavigateToAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
             onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
             onContextMenu={handleContextMenu}
+            onPlayTrack={(track, queue) => { playTrack(track, queue); }}
             returnToAlbumId={returnToAlbumId}
             onReturnHandled={() => setReturnToAlbumId(undefined)}
             scrollContainer={viewContainerRef}
@@ -218,6 +381,7 @@ const App = () => {
             onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
             onContextMenu={handleContextMenu}
             onToast={showToast}
+            onOpenAddMusic={(pl) => setAddMusicPlaylist(pl)}
         />;
       case 'Queue':
         return <QueueView
@@ -231,6 +395,7 @@ const App = () => {
             onSelectArtist={(id) => setSelectedArtistId(id)}
             onSelectAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
             onPlayTrack={(track, queue) => { playTrack(track, queue); }}
+            onContextMenu={handleContextMenu}
             onToast={showToast}
         />;
       case 'Album':
@@ -242,9 +407,33 @@ const App = () => {
             onToast={showToast}
         />;
       case 'Settings':
-        return <ServerConfig onClose={() => navigate('Library')} onConnect={() => { showToast("Connected"); navigate('Library'); }} />;
-      default:
+        return <ServerConfig
+            onClose={() => navigate('Library')}
+            onConnect={() => { showToast("Connected"); navigate('Library'); }}
+            plugins={plugins}
+            disabledPlugins={disabledPlugins}
+            onTogglePlugin={handleTogglePlugin}
+            onDeletePlugin={handleDeletePlugin}
+            onImportPlugin={handleImportPlugin}
+        />;
+      default: {
+        // Check for plugin views (Plugin:my-plugin-id)
+        if (activeTab.startsWith('Plugin:')) {
+          const pluginId = activeTab.slice('Plugin:'.length);
+          const plugin = plugins.find(p => p.id === pluginId);
+          if (plugin) {
+            const PluginView = plugin.view;
+            return <PluginView
+              onPlayTrack={(track, queue) => { playTrack(track, queue); }}
+              onNavigateToAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
+              onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
+              onContextMenu={handleContextMenu}
+              onToast={showToast}
+            />;
+          }
+        }
         return <LibraryView onPlayAlbum={() => {}} onNavigateToAlbum={() => {}} onNavigateToArtist={() => {}} onContextMenu={handleContextMenu} />;
+      }
     }
   };
 
@@ -253,23 +442,32 @@ const App = () => {
       
       {/* Overlays */}
       <Toast message={toastMessage} />
-      <ContextMenu menu={contextMenu} onClose={() => setContextMenu(null)} onAction={handleContextAction} />
-      {showWizard && (
-        <div className={`absolute inset-0 z-[100] flex items-center justify-center ${isLinux ? 'bg-black/90' : 'bg-black/80 backdrop-blur-xl'} p-8`} onClick={(e) => e.stopPropagation()}>
-          <div className="w-full max-w-2xl bg-[#0a0a0a] border border-white/10 rounded-3xl p-12 relative shadow-2xl overflow-hidden">
-            <button onClick={() => setShowWizard(false)} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors"><X size={24} weight="light" /></button>
-            <div className="animate-in slide-in-from-right-8 fade-in duration-500">
-                <h2 className="text-sm font-bold tracking-[0.2em] text-white/50 uppercase mb-4">Step 01</h2>
-                <h1 className="text-5xl font-medium text-white mb-8 tracking-tighter">Name your creation.</h1>
-                <input autoFocus type="text" placeholder="My Playlist..." className="w-full bg-transparent border-b border-white/20 text-4xl text-white placeholder:text-white/20 pb-4 focus:outline-none focus:border-white transition-colors"/>
-                <div className="mt-12 flex justify-end">
-                <button onClick={() => { setShowWizard(false); showToast("Playlist Created"); }} className="px-8 py-4 bg-white text-black rounded-full font-bold flex items-center gap-2 hover:scale-105 transition-transform">Finish <ArrowRightIcon size={18} weight="bold" /></button>
-                </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ContextMenu menu={contextMenu} playlists={playlists} onClose={() => setContextMenu(null)} onAction={handleContextAction} />
+      {showWizard && <NewPlaylistWizard
+        isLinux={isLinux}
+        onClose={() => setShowWizard(false)}
+        onCreate={async (name: string) => {
+          const pl = await createPlaylist(name);
+          if (pl) {
+            showToast(`Created playlist: ${pl.title}`);
+            setSelectedPlaylistId(pl.id);
+            navigate('Playlists');
+          } else {
+            showToast('Failed to create playlist');
+          }
+          setShowWizard(false);
+        }}
+      />}
       
+      {addMusicPlaylist && (
+        <AddMusicWizard
+          playlist={addMusicPlaylist}
+          isLinux={isLinux}
+          onClose={() => setAddMusicPlaylist(null)}
+          onToast={showToast}
+        />
+      )}
+
       {isPlayerExpanded && (
         <FullScreenPlayer
             onCollapse={() => setIsPlayerExpanded(false)}
@@ -292,7 +490,7 @@ const App = () => {
       )}
 
       <div className="relative z-10 flex h-full p-4 gap-6">
-        <Sidebar activeTab={activeTab} onNavigate={(view) => { if (view === 'Artist') setSelectedArtistId(undefined); navigate(view); }} onNewPlaylist={() => setShowWizard(true)} />
+        <Sidebar activeTab={activeTab} onNavigate={(view) => { if (view === 'Artist') setSelectedArtistId(undefined); navigate(view); }} onNewPlaylist={() => setShowWizard(true)} plugins={enabledPlugins} />
 
         <main className={`flex-1 h-full overflow-hidden relative rounded-3xl border border-white/5 bg-black/40 flex flex-col`}>
            {/* Header */}
@@ -326,7 +524,9 @@ const App = () => {
 
           {/* View Container */}
           <div ref={viewContainerRef} className="flex-1 overflow-y-auto no-scrollbar px-10 pt-4">
-            {renderView()}
+            <ErrorBoundary>
+              {renderView()}
+            </ErrorBoundary>
           </div>
         </main>
       </div>
@@ -336,6 +536,7 @@ const App = () => {
         onToast={showToast}
         onExpand={() => setIsPlayerExpanded(true)}
         onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
+        onNavigateToAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
         className={`${isLinux ? '' : 'transition-[transform,opacity] duration-300'} ${isPlayerExpanded ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
       />
     </div>

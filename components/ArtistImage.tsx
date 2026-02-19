@@ -4,6 +4,7 @@ import { useArtistImage, ARTIST_PLACEHOLDER } from '../hooks/useArtistImage';
 interface ArtistImageProps {
   artistName: string;
   className?: string;
+  style?: React.CSSProperties;
   alt?: string;
   fallbackSrc?: string;
 }
@@ -15,6 +16,7 @@ interface ArtistImageProps {
 export const ArtistImage: React.FC<ArtistImageProps> = ({
   artistName,
   className = '',
+  style,
   alt,
   fallbackSrc,
 }) => {
@@ -30,6 +32,7 @@ export const ArtistImage: React.FC<ArtistImageProps> = ({
       src={imageUrl}
       alt={alt || artistName}
       className={`${className} ${isLoading ? 'animate-pulse' : ''}`}
+      style={style}
       onError={handleError}
       loading="lazy"
       decoding="async"

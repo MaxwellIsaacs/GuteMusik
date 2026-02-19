@@ -47,6 +47,10 @@ interface ServerContextType {
 
   // Playlist management
   updatePlaylistInfo: (id: string, name?: string, description?: string) => Promise<void>;
+  createPlaylist: (name: string) => Promise<Playlist | undefined>;
+  deletePlaylist: (id: string) => Promise<void>;
+  addToPlaylist: (playlistId: string, songIds: string[]) => Promise<void>;
+  removeFromPlaylist: (playlistId: string, songIndexes: number[]) => Promise<void>;
 
   // Favorites
   starredTracks: Track[];
@@ -236,6 +240,54 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     }
   }, [api, refreshPlaylists]);
 
+  // Create a new playlist
+  const createPlaylist = useCallback(async (name: string): Promise<Playlist | undefined> => {
+    if (!api) return undefined;
+    try {
+      const playlist = await api.createPlaylist(name);
+      await refreshPlaylists();
+      return playlist;
+    } catch (error) {
+      console.error('Failed to create playlist:', error);
+      return undefined;
+    }
+  }, [api, refreshPlaylists]);
+
+  // Delete a playlist
+  const deletePlaylist = useCallback(async (id: string): Promise<void> => {
+    if (!api) return;
+    try {
+      await api.deletePlaylist(id);
+      await refreshPlaylists();
+    } catch (error) {
+      console.error('Failed to delete playlist:', error);
+      throw error;
+    }
+  }, [api, refreshPlaylists]);
+
+  // Add tracks to a playlist
+  const addToPlaylist = useCallback(async (playlistId: string, songIds: string[]): Promise<void> => {
+    if (!api) return;
+    try {
+      await api.addToPlaylist(playlistId, songIds);
+      await refreshPlaylists();
+    } catch (error) {
+      console.error('Failed to add to playlist:', error);
+      throw error;
+    }
+  }, [api, refreshPlaylists]);
+
+  // Remove tracks from a playlist by index
+  const removeFromPlaylist = useCallback(async (playlistId: string, songIndexes: number[]): Promise<void> => {
+    if (!api) return;
+    try {
+      await api.removeFromPlaylist(playlistId, songIndexes);
+    } catch (error) {
+      console.error('Failed to remove from playlist:', error);
+      throw error;
+    }
+  }, [api]);
+
   // Toggle star status for a song or album
   const toggleStar = useCallback(async (id: string, type: 'song' | 'album', currentlyStarred: boolean): Promise<boolean> => {
     if (!api) return false;
@@ -319,6 +371,10 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     setQueueTracks,
     addToQueue,
     updatePlaylistInfo,
+    createPlaylist,
+    deletePlaylist,
+    addToPlaylist,
+    removeFromPlaylist,
     starredTracks,
     starredAlbums,
     isLoadingStarred,
@@ -347,6 +403,10 @@ export function ServerProvider({ children }: { children: ReactNode }) {
     refreshAll,
     addToQueue,
     updatePlaylistInfo,
+    createPlaylist,
+    deletePlaylist,
+    addToPlaylist,
+    removeFromPlaylist,
     starredTracks,
     starredAlbums,
     isLoadingStarred,

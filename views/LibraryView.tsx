@@ -6,16 +6,11 @@ import { Album, Track } from '../types';
 import { useEnrichedAlbums } from '../hooks/useAlbumYears';
 import { ArtistLink } from '../components/ArtistLink';
 import { usePlatform } from '../hooks/usePlatform';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
-// Get grid span classes based on album size
-function getGridSpan(size: Album['size']): string {
-  switch (size) {
-    case 'xl': return 'col-span-2 row-span-2';
-    case 'large': return 'col-span-2 row-span-2';
-    case 'medium': return 'col-span-1 row-span-1';
-    case 'small': return 'col-span-1 row-span-1';
-    default: return 'col-span-1 row-span-1';
-  }
+// Get grid span classes based on album size (uniform sizing)
+function getGridSpan(_size: Album['size']): string {
+  return 'col-span-1 row-span-1';
 }
 
 // Arrange albums for optimal grid packing
@@ -488,8 +483,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onPlayAlbum, onNavigat
                   <div
                     className="grid gap-1.5"
                     style={{
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                      gridAutoRows: '140px',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                      gridAutoRows: '180px',
                       gridAutoFlow: isLinux ? 'row' : 'dense',
                     }}
                   >
@@ -514,7 +509,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onPlayAlbum, onNavigat
                             className={`absolute inset-0 w-full h-full object-cover object-center ${isLinux ? '' : 'transition-transform duration-500 group-hover:scale-105'}`}
                             alt={item.title}
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.id}/400/400`;
+                              (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                             }}
                           />
 
@@ -556,8 +551,8 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onPlayAlbum, onNavigat
           <div
             className="grid gap-1.5"
             style={{
-              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-              gridAutoRows: '140px',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+              gridAutoRows: '180px',
               gridAutoFlow: isLinux ? 'row' : 'dense',
             }}
           >
@@ -582,7 +577,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onPlayAlbum, onNavigat
                     className={`absolute inset-0 w-full h-full object-cover object-center ${isLinux ? '' : 'transition-transform duration-500 group-hover:scale-105'}`}
                     alt={item.title}
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.id}/400/400`;
+                      (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                     }}
                   />
 
@@ -637,12 +632,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onPlayAlbum, onNavigat
                   </p>
                 </div>
                 <span className="text-xs font-mono text-white/30">{track.duration}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); toggleStar(track.id, 'song', true); }}
-                  className="p-2 rounded-full text-rose-500 hover:bg-white/10 transition-colors"
-                >
-                  <ChromeIcon name="heart" size={16} />
-                </button>
               </div>
             ))}
           </div>

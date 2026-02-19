@@ -5,6 +5,7 @@ import { useServer } from '../context/ServerContext';
 import { Track, Album, Artist } from '../types';
 import { ArtistLink } from '../components/ArtistLink';
 import { ArtistImage } from '../components/ArtistImage';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
 interface SearchViewProps {
   onPlayTrack: (track: Track, queue?: Track[]) => void;
@@ -114,7 +115,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                       className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       alt={album.title}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${album.id}/300/300`;
+                        (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -158,7 +159,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                       className="w-full h-full object-cover"
                       alt={track.title}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${track.id}/100/100`;
+                        (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                       }}
                     />
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

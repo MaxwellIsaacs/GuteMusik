@@ -7,6 +7,7 @@ import { Track, Album } from '../types';
 import { ArtistLink } from '../components/ArtistLink';
 import { useAlbumInfo } from '../hooks/useAlbumInfo';
 import { SourceBadge } from '../components/SourceBadge';
+import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
 interface AlbumViewProps {
   albumId?: string;
@@ -28,10 +29,11 @@ export const AlbumView: React.FC<AlbumViewProps> = ({ albumId, onPlayTrack, onNa
   const currentTrackId = audioState.currentTrack?.id;
   const isPlaying = audioState.isPlaying;
 
-  const { info: albumInfo, source: albumInfoSource } = useAlbumInfo(
-    selectedAlbum?.artist,
-    selectedAlbum?.title
-  );
+  // Toggled off for now
+  // const { info: albumInfo, source: albumInfoSource } = useAlbumInfo(
+  //   selectedAlbum?.artist,
+  //   selectedAlbum?.title
+  // );
 
   useEffect(() => {
     if (albumId && api) {
@@ -105,13 +107,13 @@ export const AlbumView: React.FC<AlbumViewProps> = ({ albumId, onPlayTrack, onNa
 
           {/* Album cover — square, prominent */}
           <div className="flex-shrink-0 album-art-enter">
-            <div className="w-64 h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 rounded-sm overflow-hidden shadow-2xl shadow-black/50 relative group">
+            <div className="w-64 h-64 lg:w-80 lg:h-80 xl:w-96 xl:h-96 overflow-hidden shadow-2xl shadow-black/50 relative group">
               <img
                 src={album.cover}
                 className="w-full h-full object-cover"
                 alt={album.title}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${album.id}/400/400`;
+                  (e.target as HTMLImageElement).src = PLACEHOLDER_COVER;
                 }}
               />
               {/* Play overlay on hover */}
@@ -139,12 +141,14 @@ export const AlbumView: React.FC<AlbumViewProps> = ({ albumId, onPlayTrack, onNa
               <span className="text-[10px] font-mono tracking-wider text-white/25">{album.trackCount} tracks</span>
               <span className="w-0.5 h-0.5 rounded-full bg-white/15" />
               <span className="text-[10px] font-mono tracking-wider text-white/25">{totalMin} min</span>
+              {/* Toggled off for now
               {albumInfo?.label && (
                 <>
                   <span className="w-0.5 h-0.5 rounded-full bg-white/15" />
                   <span className="text-[10px] tracking-wider text-white/20">{albumInfo.label}</span>
                 </>
               )}
+              */}
             </div>
 
             {/* Title */}
@@ -161,23 +165,38 @@ export const AlbumView: React.FC<AlbumViewProps> = ({ albumId, onPlayTrack, onNa
             </p>
 
             {/* Actions */}
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-6 mb-8">
               <button
                 onClick={() => { if (albumTracks.length > 0) onPlayTrack(albumTracks[0], albumTracks); }}
-                className="flex items-center gap-2.5 px-7 py-3 bg-white text-black font-medium text-xs uppercase tracking-wider hover:bg-purple-400 transition-colors duration-300 rounded-sm"
+                className="flex items-center justify-center text-white/50 hover:text-white transition-colors duration-300"
               >
-                <ChromeIcon name="play" size={14} />
-                Play
+                <ChromeIcon name="play" size={22} />
+              </button>
+              <button
+                onClick={async () => {
+                  if (!album) return;
+                  const isLiked = album.liked;
+                  const success = await toggleStar(album.id, 'album', isLiked);
+                  if (success) {
+                    setSelectedAlbum(prev => prev ? { ...prev, liked: !isLiked } : prev);
+                    onToast(isLiked ? "Removed from favorites" : "Added to favorites");
+                  } else {
+                    onToast("Failed to update favorite");
+                  }
+                }}
+                className="flex items-center justify-center text-white/50 hover:text-white transition-colors duration-300"
+              >
+                <ChromeIcon name="heart" size={22} />
               </button>
               <button
                 onClick={() => onToast("Downloading Album...")}
-                className="flex items-center justify-center w-11 h-11 bg-white/5 text-white/60 border border-white/8 hover:bg-white/10 hover:border-white/15 hover:text-white transition-colors duration-200 rounded-sm"
+                className="flex items-center justify-center text-white/50 hover:text-white transition-colors duration-300"
               >
-                <ChromeIcon name="fast-forward" size={16} />
+                <ChromeIcon name="download" size={22} />
               </button>
             </div>
 
-            {/* Description — flows naturally here */}
+            {/* Toggled off for now
             {albumInfo?.descriptionSummary && (
               <div className="max-w-lg">
                 <p
@@ -198,6 +217,7 @@ export const AlbumView: React.FC<AlbumViewProps> = ({ albumId, onPlayTrack, onNa
                 </div>
               </div>
             )}
+            */}
           </div>
         </div>
       </div>
