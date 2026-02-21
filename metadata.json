@@ -1,0 +1,5 @@
+{
+  "name": "Lumina - Navidrome Client",
+  "description": "A high-fidelity, aesthetic Navidrome client featuring a glassmorphism design, intelligent caching simulation, and fluid animations.",
+  "requestFramePermissions": []
+}

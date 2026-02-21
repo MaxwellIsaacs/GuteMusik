@@ -1,0 +1,161 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+/* Custom Scrollbar for Webkit */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Hide scrollbar for clean UI but allow scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body {
+  background-color: #050505;
+  color: white;
+  overflow: hidden;
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CORE ANIMATIONS
+═══════════════════════════════════════════════════════════════ */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTIST INDEX — Typographic list with background wash
+═══════════════════════════════════════════════════════════════ */
+
+/* Background image wash — fades in/out on hover */
+.artist-bg-wash {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.artist-bg-wash img {
+  filter: grayscale(30%) contrast(1.05) brightness(1.1);
+}
+
+/* Artist row — subtle left-edge reveal on hover */
+.artist-row {
+  position: relative;
+}
+
+.artist-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.3);
+  transition: width 0.3s ease;
+}
+
+.artist-row:hover::before {
+  width: 20px;
+}
+
+/* Shift text right on hover to make room for the line */
+.artist-row:hover > div {
+  padding-left: 28px;
+  transition: padding-left 0.3s ease;
+}
+
+.artist-row > div {
+  transition: padding-left 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTIST INDEX — Hover preview popup
+═══════════════════════════════════════════════════════════════ */
+
+@keyframes preview-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.artist-preview-popup {
+  animation: preview-enter 0.15s ease-out forwards;
+}
+
+/* Frosted glass card — blur shows the artist image through */
+.artist-preview-card {
+  background: rgba(20, 20, 20, 0.45);
+  -webkit-backdrop-filter: saturate(180%) blur(50px);
+  backdrop-filter: saturate(180%) blur(50px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.55),
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTIST DETAIL — Editorial layout
+═══════════════════════════════════════════════════════════════ */
+
+.artist-detail-view {
+  animation: fade-in 0.8s ease-out forwards;
+}
+
+/* Smooth image load transition */
+.artist-detail-view img {
+  transition: opacity 0.7s ease-out, transform 0.8s ease-out;
+}
+
+/* Button press */
+.artist-detail-view button:active {
+  transform: scale(0.97);
+}
+
+/* Album filmstrip card hover */
+.album-card-item:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.album-card-item {
+  transition: transform 0.3s ease;
+}
+
+/* Responsive typography for artist name */
+@media (max-width: 768px) {
+  .artist-detail-view h1 {
+    font-size: clamp(2.5rem, 12vw, 5rem) !important;
+  }
+}
+
