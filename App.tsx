@@ -465,11 +465,6 @@ const App = () => {
         />
       )}
 
-      {/* Subtle noise texture */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-         <div className="absolute inset-0 bg-noise opacity-[0.03] mix-blend-overlay"></div>
-      </div>
-
       {/* Top drag region — spans the full window width for titlebar dragging */}
       <div data-tauri-drag-region className="absolute top-0 left-0 right-0 h-10 z-[5]" />
 
@@ -477,6 +472,10 @@ const App = () => {
         <Sidebar activeTab={activeTab} onNavigate={(view) => { if (view === 'Artist') setSelectedArtistId(undefined); navigate(view); }} onNewPlaylist={() => setShowWizard(true)} plugins={enabledPlugins} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
 
         <main className={`flex-1 h-full overflow-hidden relative rounded-3xl border border-white/5 bg-black/40 flex flex-col`}>
+          {/* Subtle noise texture — scoped to main content only */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-3xl">
+             <div className="absolute inset-0 bg-noise opacity-[0.03] mix-blend-overlay"></div>
+          </div>
            {/* Header */}
            <div data-tauri-drag-region className="sticky top-0 z-40 px-8 py-6 flex justify-between items-center bg-gradient-to-b from-black/20 to-transparent">
              <div className="flex gap-4 items-center">
