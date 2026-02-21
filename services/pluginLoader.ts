@@ -1,10 +1,12 @@
 import { PluginDefinition, PluginViewProps } from '../types';
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 
 // Storage keys
 const INSTALLED_PLUGINS_KEY = 'gutemusik:installed-plugins';
 
-// Plugin manifest format (inside .gutemusik zip)
+// Plugin manifest format (inside .gutemusik zip or plugin folder)
 export interface PluginManifest {
   id: string;
   name: string;
@@ -28,8 +30,23 @@ const dynamicPlugins: Map<string, PluginDefinition> = new Map();
 declare global {
   interface Window {
     GuteMusik: {
+      // Plugin registration
       registerPlugin: (plugin: PluginDefinition) => void;
+
+      // React and hooks
       React: typeof React;
+      useState: typeof useState;
+      useEffect: typeof useEffect;
+      useCallback: typeof useCallback;
+      useRef: typeof useRef;
+      useMemo: typeof useMemo;
+
+      // Tauri IPC
+      invoke: typeof invoke;
+      listen: typeof listen;
+
+      // Utilities
+      createElement: typeof React.createElement;
     };
   }
 }
@@ -37,12 +54,26 @@ declare global {
 // Initialize the global API
 export function initPluginAPI() {
   window.GuteMusik = {
+    // Plugin registration
     registerPlugin: (plugin: PluginDefinition) => {
       console.log(`[Plugins] Registered: ${plugin.id}`);
       dynamicPlugins.set(plugin.id, plugin);
     },
-    // Expose React so plugins don't need to bundle it
+
+    // React and hooks - plugins use these instead of importing
     React,
+    useState,
+    useEffect,
+    useCallback,
+    useRef,
+    useMemo,
+
+    // Tauri IPC - plugins can call backend commands
+    invoke,
+    listen,
+
+    // Convenience
+    createElement: React.createElement,
   };
 }
 
@@ -140,6 +171,59 @@ export async function importPlugin(file: File): Promise<{ success: boolean; erro
     return { success: true, plugin: manifest };
   } catch (err) {
     console.error('[Plugins] Import failed:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}
+
+// Import a plugin from a folder (via FileSystemDirectoryHandle or file list)
+export async function importPluginFolder(files: FileList | File[]): Promise<{ success: boolean; error?: string; plugin?: PluginManifest }> {
+  try {
+    const fileArray = Array.from(files);
+
+    // Find manifest.json
+    const manifestFile = fileArray.find(f => f.name === 'manifest.json' || f.webkitRelativePath?.endsWith('/manifest.json'));
+    if (!manifestFile) {
+      return { success: false, error: 'Invalid plugin folder: missing manifest.json' };
+    }
+
+    const manifestText = await manifestFile.text();
+    const manifest: PluginManifest = JSON.parse(manifestText);
+
+    // Validate manifest
+    if (!manifest.id || !manifest.name || !manifest.version) {
+      return { success: false, error: 'Invalid manifest: missing required fields (id, name, version)' };
+    }
+
+    // Find index.js
+    const codeFile = fileArray.find(f => f.name === 'index.js' || f.webkitRelativePath?.endsWith('/index.js'));
+    if (!codeFile) {
+      return { success: false, error: 'Invalid plugin folder: missing index.js (run build.sh first)' };
+    }
+
+    const code = await codeFile.text();
+
+    // Install the plugin
+    const installed = getInstalledPlugins();
+    const existingIndex = installed.findIndex(p => p.manifest.id === manifest.id);
+
+    const newPlugin: InstalledPlugin = {
+      manifest,
+      code,
+      installedAt: Date.now(),
+    };
+
+    if (existingIndex >= 0) {
+      installed[existingIndex] = newPlugin;
+    } else {
+      installed.push(newPlugin);
+    }
+
+    saveInstalledPlugins(installed);
+    executePluginCode(newPlugin);
+
+    return { success: true, plugin: manifest };
+  } catch (err) {
+    console.error('[Plugins] Folder import failed:', err);
     return { success: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }
 }

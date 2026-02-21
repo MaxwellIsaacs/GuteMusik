@@ -59,12 +59,23 @@ export interface ContextMenuState {
 
 export type ViewState = 'Library' | 'Playlists' | 'Queue' | 'Artist' | 'Album' | 'Settings' | `Plugin:${string}`;
 
+export interface ServerState {
+  isConnected: boolean;
+  isConnecting: boolean;
+  error: string | null;
+  serverUrl: string | null;
+}
+
 export interface PluginViewProps {
   onPlayTrack: (track: Track, queue?: Track[]) => void;
   onNavigateToAlbum: (id: string) => void;
   onNavigateToArtist: (id: string) => void;
   onContextMenu: (e: React.MouseEvent, item: any, type: string) => void;
   onToast: (msg: string) => void;
+  // Server context for plugins that need it
+  serverState: ServerState;
+  refreshAlbums: () => Promise<void>;
+  refreshArtists: () => Promise<void>;
 }
 
 export interface PluginDefinition {

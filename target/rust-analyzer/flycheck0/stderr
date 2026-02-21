@@ -1,1 +1,2206 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.12s
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+ 160.161994826s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app_lib"}: cargo::core::compiler::fingerprint: fingerprint error for app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)/Check { test: false }/TargetInner { ..: lib_target("app_lib", ["staticlib", "cdylib", "rlib"], "/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/src/lib.rs", Edition2021) }
+ 160.163679275s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/app-66ef05cfa7dc711a/lib-app_lib`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+  18: <unknown>
+ 160.460505340s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app_lib"}: cargo::core::compiler::fingerprint: fingerprint error for app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)/Check { test: true }/TargetInner { ..: lib_target("app_lib", ["staticlib", "cdylib", "rlib"], "/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/src/lib.rs", Edition2021) }
+ 160.460527378s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/app-7fad73cfeaee2f9d/test-lib-app_lib`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+  18: <unknown>
+ 160.464186714s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint: fingerprint error for app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)/Check { test: false }/TargetInner { name: "app", doc: true, ..: with_path("/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/src/main.rs", Edition2021) }
+ 160.464223923s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/app-8b06d78e9d6b8ceb/bin-app`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+  18: <unknown>
+ 160.469115777s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint: fingerprint error for app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)/Check { test: true }/TargetInner { name: "app", doc: true, ..: with_path("/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/src/main.rs", Edition2021) }
+ 160.469196047s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/app-cc0d33dc6bda1560/test-bin-app`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+  18: <unknown>
+    Checking app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)
+cargo(32908) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+cargo(32909) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+error: could not compile `app` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `app` (lib) due to 1 previous error
+ backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.385698052s  INFO prepare_target{force=false package_id=portable-pty v0.8.1 target="portable_pty"}: cargo::core::compiler::fingerprint: fingerprint error for portable-pty v0.8.1/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("portable_pty", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/portable-pty-0.8.1/src/lib.rs", Edition2018) }
+   1.385731160s  INFO prepare_target{force=false package_id=portable-pty v0.8.1 target="portable_pty"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/portable-pty-dce388d4306ae937/lib-portable_pty`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   1.387495196s  INFO prepare_target{force=false package_id=downcast-rs v1.2.1 target="downcast_rs"}: cargo::core::compiler::fingerprint: fingerprint error for downcast-rs v1.2.1/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("downcast_rs", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/downcast-rs-1.2.1/src/lib.rs", Edition2015) }
+   1.387523167s  INFO prepare_target{force=false package_id=downcast-rs v1.2.1 target="downcast_rs"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/downcast-rs-67f1a375c715f688/lib-downcast_rs`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.388119706s  INFO prepare_target{force=false package_id=filedescriptor v0.8.3 target="filedescriptor"}: cargo::core::compiler::fingerprint: fingerprint error for filedescriptor v0.8.3/Check { test: false }/TargetInner { ..: lib_target("filedescriptor", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/filedescriptor-0.8.3/src/lib.rs", Edition2018) }
+   1.388144383s  INFO prepare_target{force=false package_id=filedescriptor v0.8.3 target="filedescriptor"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/filedescriptor-3eb5e3d417f3333f/lib-filedescriptor`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.389253114s  INFO prepare_target{force=false package_id=nix v0.25.1 target="nix"}: cargo::core::compiler::fingerprint: fingerprint error for nix v0.25.1/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("nix", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.25.1/src/lib.rs", Edition2018) }
+   1.389277812s  INFO prepare_target{force=false package_id=nix v0.25.1 target="nix"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/nix-b3c7d5c97bb8552a/lib-nix`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.390333103s  INFO prepare_target{force=false package_id=memoffset v0.6.5 target="memoffset"}: cargo::core::compiler::fingerprint: fingerprint error for memoffset v0.6.5/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("memoffset", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/memoffset-0.6.5/src/lib.rs", Edition2015) }
+   1.390355908s  INFO prepare_target{force=false package_id=memoffset v0.6.5 target="memoffset"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/memoffset-a6ee8c7366f3f3ae/lib-memoffset`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.392141315s  INFO prepare_target{force=false package_id=serial v0.4.0 target="serial"}: cargo::core::compiler::fingerprint: fingerprint error for serial v0.4.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("serial", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serial-0.4.0/src/lib.rs", Edition2015) }
+   1.392165235s  INFO prepare_target{force=false package_id=serial v0.4.0 target="serial"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/serial-2fc14f1aeb31cdc4/lib-serial`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.393150899s  INFO prepare_target{force=false package_id=serial-core v0.4.0 target="serial_core"}: cargo::core::compiler::fingerprint: fingerprint error for serial-core v0.4.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("serial_core", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serial-core-0.4.0/src/lib.rs", Edition2015) }
+   1.393178201s  INFO prepare_target{force=false package_id=serial-core v0.4.0 target="serial_core"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/serial-core-f58dc626a3267a40/lib-serial_core`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.393929560s  INFO prepare_target{force=false package_id=serial-unix v0.4.0 target="serial_unix"}: cargo::core::compiler::fingerprint: fingerprint error for serial-unix v0.4.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("serial_unix", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serial-unix-0.4.0/src/lib.rs", Edition2015) }
+   1.393949801s  INFO prepare_target{force=false package_id=serial-unix v0.4.0 target="serial_unix"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/serial-unix-5f92efeb228627f3/lib-serial_unix`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.394881184s  INFO prepare_target{force=false package_id=ioctl-rs v0.1.6 target="ioctl_rs"}: cargo::core::compiler::fingerprint: fingerprint error for ioctl-rs v0.1.6/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("ioctl_rs", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ioctl-rs-0.1.6/src/lib.rs", Edition2015) }
+   1.394902809s  INFO prepare_target{force=false package_id=ioctl-rs v0.1.6 target="ioctl_rs"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/ioctl-rs-798692ab9c5140ce/lib-ioctl_rs`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.395460744s  INFO prepare_target{force=false package_id=termios v0.2.2 target="termios"}: cargo::core::compiler::fingerprint: fingerprint error for termios v0.2.2/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("termios", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/termios-0.2.2/src/lib.rs", Edition2015) }
+   1.395475966s  INFO prepare_target{force=false package_id=termios v0.2.2 target="termios"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/termios-7e5912babcd8b232/lib-termios`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.396100304s  INFO prepare_target{force=false package_id=shell-words v1.1.1 target="shell_words"}: cargo::core::compiler::fingerprint: fingerprint error for shell-words v1.1.1/Check { test: false }/TargetInner { ..: lib_target("shell_words", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shell-words-1.1.1/src/lib.rs", Edition2015) }
+   1.396131540s  INFO prepare_target{force=false package_id=shell-words v1.1.1 target="shell_words"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/shell-words-1a56200189b01ae2/lib-shell_words`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.396806101s  INFO prepare_target{force=false package_id=reqwest v0.12.28 target="reqwest"}: cargo::core::compiler::fingerprint: fingerprint error for reqwest v0.12.28/Check { test: false }/TargetInner { ..: lib_target("reqwest", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/reqwest-0.12.28/src/lib.rs", Edition2021) }
+   1.396822034s  INFO prepare_target{force=false package_id=reqwest v0.12.28 target="reqwest"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/reqwest-8fc4ec7080265384/lib-reqwest`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   1.404385152s  INFO prepare_target{force=false package_id=hyper v1.8.1 target="hyper"}: cargo::core::compiler::fingerprint: fingerprint error for hyper v1.8.1/Check { test: false }/TargetInner { ..: lib_target("hyper", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.8.1/src/lib.rs", Edition2021) }
+   1.404404539s  INFO prepare_target{force=false package_id=hyper v1.8.1 target="hyper"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/hyper-1fa8e01e184b5bab/lib-hyper`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.416014232s  INFO prepare_target{force=false package_id=tokio v1.49.0 target="tokio"}: cargo::core::compiler::fingerprint: fingerprint error for tokio v1.49.0/Check { test: false }/TargetInner { ..: lib_target("tokio", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.49.0/src/lib.rs", Edition2021) }
+   1.416043179s  INFO prepare_target{force=false package_id=tokio v1.49.0 target="tokio"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tokio-bee3e131f6a72846/lib-tokio`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.417282606s  INFO prepare_target{force=false package_id=mio v1.1.1 target="mio"}: cargo::core::compiler::fingerprint: fingerprint error for mio v1.1.1/Check { test: false }/TargetInner { ..: lib_target("mio", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/mio-1.1.1/src/lib.rs", Edition2021) }
+   1.417305988s  INFO prepare_target{force=false package_id=mio v1.1.1 target="mio"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/mio-d41ac7c64f5a18b9/lib-mio`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.418022953s  INFO prepare_target{force=false package_id=socket2 v0.6.2 target="socket2"}: cargo::core::compiler::fingerprint: fingerprint error for socket2 v0.6.2/Check { test: false }/TargetInner { ..: lib_target("socket2", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/socket2-0.6.2/src/lib.rs", Edition2021) }
+   1.418050392s  INFO prepare_target{force=false package_id=socket2 v0.6.2 target="socket2"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/socket2-3a2a2708064b854e/lib-socket2`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.419624200s  INFO prepare_target{force=false package_id=hyper-rustls v0.27.7 target="hyper_rustls"}: cargo::core::compiler::fingerprint: fingerprint error for hyper-rustls v0.27.7/Check { test: false }/TargetInner { ..: lib_target("hyper_rustls", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-rustls-0.27.7/src/lib.rs", Edition2021) }
+   1.419747870s  INFO prepare_target{force=false package_id=hyper-rustls v0.27.7 target="hyper_rustls"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/hyper-rustls-b6a353b19dc0a7f7/lib-hyper_rustls`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.420871616s  INFO prepare_target{force=false package_id=hyper-util v0.1.20 target="hyper_util"}: cargo::core::compiler::fingerprint: fingerprint error for hyper-util v0.1.20/Check { test: false }/TargetInner { ..: lib_target("hyper_util", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.20/src/lib.rs", Edition2021) }
+   1.420890258s  INFO prepare_target{force=false package_id=hyper-util v0.1.20 target="hyper_util"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/hyper-util-0bfb8f4dce874934/lib-hyper_util`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.428241706s  INFO prepare_target{force=false package_id=rustls v0.23.36 target="rustls"}: cargo::core::compiler::fingerprint: fingerprint error for rustls v0.23.36/Check { test: false }/TargetInner { ..: lib_target("rustls", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustls-0.23.36/src/lib.rs", Edition2021) }
+   1.428268476s  INFO prepare_target{force=false package_id=rustls v0.23.36 target="rustls"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/rustls-f68cc62baf8cfddf/lib-rustls`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.429163094s  INFO prepare_target{force=false package_id=ring v0.17.14 target="ring"}: cargo::core::compiler::fingerprint: fingerprint error for ring v0.17.14/Check { test: false }/TargetInner { ..: lib_target("ring", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/ring-0.17.14/src/lib.rs", Edition2021) }
+   1.429190383s  INFO prepare_target{force=false package_id=ring v0.17.14 target="ring"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/ring-7be5b52a9bc81d94/lib-ring`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.429863305s  INFO prepare_target{force=false package_id=getrandom v0.2.17 target="getrandom"}: cargo::core::compiler::fingerprint: fingerprint error for getrandom v0.2.17/Check { test: false }/TargetInner { ..: lib_target("getrandom", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/getrandom-0.2.17/src/lib.rs", Edition2018) }
+   1.429892694s  INFO prepare_target{force=false package_id=getrandom v0.2.17 target="getrandom"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/getrandom-8520cab23b547175/lib-getrandom`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: cargo::core::compiler::compile
+  12: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  13: cargo::ops::cargo_compile::compile_ws
+  14: cargo::ops::cargo_compile::compile_with_exec
+  15: cargo::ops::cargo_compile::compile
+  16: cargo::commands::check::exec
+  17: <cargo::cli::Exec>::exec
+  18: cargo::main
+  19: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  20: std::rt::lang_start::<()>::{closure#0}
+  21: std::rt::lang_start_internal
+  22: _main
+  23: <unknown>
+   1.434499062s  INFO prepare_target{force=false package_id=rustls-webpki v0.103.9 target="webpki"}: cargo::core::compiler::fingerprint: fingerprint error for rustls-webpki v0.103.9/Check { test: false }/TargetInner { ..: lib_target("webpki", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rustls-webpki-0.103.9/src/lib.rs", Edition2021) }
+   1.434519634s  INFO prepare_target{force=false package_id=rustls-webpki v0.103.9 target="webpki"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/rustls-webpki-af936cd38029bbb8/lib-webpki`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.435692877s  INFO prepare_target{force=false package_id=tokio-rustls v0.26.4 target="tokio_rustls"}: cargo::core::compiler::fingerprint: fingerprint error for tokio-rustls v0.26.4/Check { test: false }/TargetInner { ..: lib_target("tokio_rustls", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-rustls-0.26.4/src/lib.rs", Edition2021) }
+   1.435711095s  INFO prepare_target{force=false package_id=tokio-rustls v0.26.4 target="tokio_rustls"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tokio-rustls-21c0e450768b6a21/lib-tokio_rustls`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.441639248s  INFO prepare_target{force=false package_id=tower v0.5.3 target="tower"}: cargo::core::compiler::fingerprint: fingerprint error for tower v0.5.3/Check { test: false }/TargetInner { ..: lib_target("tower", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tower-0.5.3/src/lib.rs", Edition2018) }
+   1.441666489s  INFO prepare_target{force=false package_id=tower v0.5.3 target="tower"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tower-6f7f83e2e71a8ceb/lib-tower`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.443216749s  INFO prepare_target{force=false package_id=tower-http v0.6.8 target="tower_http"}: cargo::core::compiler::fingerprint: fingerprint error for tower-http v0.6.8/Check { test: false }/TargetInner { ..: lib_target("tower_http", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tower-http-0.6.8/src/lib.rs", Edition2018) }
+   1.443244129s  INFO prepare_target{force=false package_id=tower-http v0.6.8 target="tower_http"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tower-http-b1f747fc851c29e6/lib-tower_http`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.451898783s  INFO prepare_target{force=false package_id=rodio v0.19.0 target="rodio"}: cargo::core::compiler::fingerprint: fingerprint error for rodio v0.19.0/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("rodio", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rodio-0.19.0/src/lib.rs", Edition2021) }
+   1.451925782s  INFO prepare_target{force=false package_id=rodio v0.19.0 target="rodio"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/rodio-4771c5f45332e4f1/lib-rodio`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   1.453063009s  INFO prepare_target{force=false package_id=cpal v0.15.3 target="cpal"}: cargo::core::compiler::fingerprint: fingerprint error for cpal v0.15.3/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("cpal", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cpal-0.15.3/src/lib.rs", Edition2021) }
+   1.453082539s  INFO prepare_target{force=false package_id=cpal v0.15.3 target="cpal"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/cpal-fc3166f5c22d3d1a/lib-cpal`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.454309348s  INFO prepare_target{force=false package_id=coreaudio-rs v0.11.3 target="coreaudio"}: cargo::core::compiler::fingerprint: fingerprint error for coreaudio-rs v0.11.3/Check { test: false }/TargetInner { ..: lib_target("coreaudio", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/coreaudio-rs-0.11.3/src/lib.rs", Edition2018) }
+   1.454332518s  INFO prepare_target{force=false package_id=coreaudio-rs v0.11.3 target="coreaudio"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/coreaudio-rs-77ec6efb74becdb6/lib-coreaudio`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.455142402s  INFO prepare_target{force=false package_id=coreaudio-sys v0.2.17 target="coreaudio_sys"}: cargo::core::compiler::fingerprint: fingerprint error for coreaudio-sys v0.2.17/Check { test: false }/TargetInner { ..: lib_target("coreaudio_sys", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/coreaudio-sys-0.2.17/src/lib.rs", Edition2024) }
+   1.455164574s  INFO prepare_target{force=false package_id=coreaudio-sys v0.2.17 target="coreaudio_sys"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/coreaudio-sys-e07d1c17337240ef/lib-coreaudio_sys`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.461098168s  INFO prepare_target{force=false package_id=mach2 v0.4.3 target="mach2"}: cargo::core::compiler::fingerprint: fingerprint error for mach2 v0.4.3/Check { test: false }/TargetInner { ..: lib_target("mach2", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/mach2-0.4.3/src/lib.rs", Edition2015) }
+   1.461117881s  INFO prepare_target{force=false package_id=mach2 v0.4.3 target="mach2"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/mach2-8378a38704cee95d/lib-mach2`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.470206250s  INFO prepare_target{force=false package_id=tauri v2.10.1 target="tauri"}: cargo::core::compiler::fingerprint: fingerprint error for tauri v2.10.1/Check { test: false }/TargetInner { ..: lib_target("tauri", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-2.10.1/src/lib.rs", Edition2021) }
+   1.470230861s  INFO prepare_target{force=false package_id=tauri v2.10.1 target="tauri"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tauri-44348549a6a5c033/lib-tauri`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   1.473959062s  INFO prepare_target{force=false package_id=cookie v0.18.1 target="cookie"}: cargo::core::compiler::fingerprint: fingerprint error for cookie v0.18.1/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("cookie", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cookie-0.18.1/src/lib.rs", Edition2018) }
+   1.473979637s  INFO prepare_target{force=false package_id=cookie v0.18.1 target="cookie"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/cookie-4644fef91dcf14a0/lib-cookie`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.475974083s  INFO prepare_target{force=false package_id=time v0.3.36 target="time"}: cargo::core::compiler::fingerprint: fingerprint error for time v0.3.36/Check { test: false }/TargetInner { name_inferred: true, benched: false, ..: lib_target("time", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/time-0.3.36/src/lib.rs", Edition2021) }
+   1.476000107s  INFO prepare_target{force=false package_id=time v0.3.36 target="time"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/time-6b51e39a3f8972d3/lib-time`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.477552742s  INFO prepare_target{force=false package_id=num_threads v0.1.7 target="num_threads"}: cargo::core::compiler::fingerprint: fingerprint error for num_threads v0.1.7/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("num_threads", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/num_threads-0.1.7/src/lib.rs", Edition2015) }
+   1.477573116s  INFO prepare_target{force=false package_id=num_threads v0.1.7 target="num_threads"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/num_threads-94e0ca4d2fe1bba5/lib-num_threads`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.478687522s  INFO prepare_target{force=false package_id=dirs v6.0.0 target="dirs"}: cargo::core::compiler::fingerprint: fingerprint error for dirs v6.0.0/Check { test: false }/TargetInner { ..: lib_target("dirs", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dirs-6.0.0/src/lib.rs", Edition2015) }
+   1.478706251s  INFO prepare_target{force=false package_id=dirs v6.0.0 target="dirs"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/dirs-be5cc6bcd95adaec/lib-dirs`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.479107953s  INFO prepare_target{force=false package_id=dirs-sys v0.5.0 target="dirs_sys"}: cargo::core::compiler::fingerprint: fingerprint error for dirs-sys v0.5.0/Check { test: false }/TargetInner { ..: lib_target("dirs_sys", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/dirs-sys-0.5.0/src/lib.rs", Edition2015) }
+   1.479121411s  INFO prepare_target{force=false package_id=dirs-sys v0.5.0 target="dirs_sys"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/dirs-sys-f7a9514e85cc4b07/lib-dirs_sys`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.481179219s  INFO prepare_target{force=false package_id=getrandom v0.3.4 target="getrandom"}: cargo::core::compiler::fingerprint: fingerprint error for getrandom v0.3.4/Check { test: false }/TargetInner { ..: lib_target("getrandom", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/getrandom-0.3.4/src/lib.rs", Edition2021) }
+   1.481199960s  INFO prepare_target{force=false package_id=getrandom v0.3.4 target="getrandom"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/getrandom-2da28268810a7e4d/lib-getrandom`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.482487710s  INFO prepare_target{force=false package_id=muda v0.17.1 target="muda"}: cargo::core::compiler::fingerprint: fingerprint error for muda v0.17.1/Check { test: false }/TargetInner { ..: lib_target("muda", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/muda-0.17.1/src/lib.rs", Edition2021) }
+   1.482505370s  INFO prepare_target{force=false package_id=muda v0.17.1 target="muda"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/muda-919c0e40b01e142a/lib-muda`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.488083135s  INFO prepare_target{force=false package_id=objc2-app-kit v0.3.2 target="objc2_app_kit"}: cargo::core::compiler::fingerprint: fingerprint error for objc2-app-kit v0.3.2/Check { test: false }/TargetInner { ..: lib_target("objc2_app_kit", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/objc2-app-kit-0.3.2/src/lib.rs", Edition2021) }
+   1.488106054s  INFO prepare_target{force=false package_id=objc2-app-kit v0.3.2 target="objc2_app_kit"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/objc2-app-kit-3901850470ac9b1c/lib-objc2_app_kit`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.489791976s  INFO prepare_target{force=false package_id=objc2-cloud-kit v0.3.2 target="objc2_cloud_kit"}: cargo::core::compiler::fingerprint: fingerprint error for objc2-cloud-kit v0.3.2/Check { test: false }/TargetInner { ..: lib_target("objc2_cloud_kit", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/objc2-cloud-kit-0.3.2/src/lib.rs", Edition2021) }
+   1.489815121s  INFO prepare_target{force=false package_id=objc2-cloud-kit v0.3.2 target="objc2_cloud_kit"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/objc2-cloud-kit-a9035274720e3352/lib-objc2_cloud_kit`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.490422414s  INFO prepare_target{force=false package_id=objc2-foundation v0.3.2 target="objc2_foundation"}: cargo::core::compiler::fingerprint: fingerprint error for objc2-foundation v0.3.2/Check { test: false }/TargetInner { ..: lib_target("objc2_foundation", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/objc2-foundation-0.3.2/src/lib.rs", Edition2021) }
+   1.490438193s  INFO prepare_target{force=false package_id=objc2-foundation v0.3.2 target="objc2_foundation"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/objc2-foundation-ad7d648c240cd0f8/lib-objc2_foundation`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: cargo::core::compiler::compile
+  12: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  13: cargo::ops::cargo_compile::compile_ws
+  14: cargo::ops::cargo_compile::compile_with_exec
+  15: cargo::ops::cargo_compile::compile
+  16: cargo::commands::check::exec
+  17: <cargo::cli::Exec>::exec
+  18: cargo::main
+  19: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  20: std::rt::lang_start::<()>::{closure#0}
+  21: std::rt::lang_start_internal
+  22: _main
+  23: <unknown>
+   1.491504906s  INFO prepare_target{force=false package_id=objc2-core-data v0.3.2 target="objc2_core_data"}: cargo::core::compiler::fingerprint: fingerprint error for objc2-core-data v0.3.2/Check { test: false }/TargetInner { ..: lib_target("objc2_core_data", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/objc2-core-data-0.3.2/src/lib.rs", Edition2021) }
+   1.491521811s  INFO prepare_target{force=false package_id=objc2-core-data v0.3.2 target="objc2_core_data"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/objc2-core-data-ff27d7915e8a8e30/lib-objc2_core_data`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.492812364s  INFO prepare_target{force=false package_id=objc2-core-image v0.3.2 target="objc2_core_image"}: cargo::core::compiler::fingerprint: fingerprint error for objc2-core-image v0.3.2/Check { test: false }/TargetInner { ..: lib_target("objc2_core_image", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/objc2-core-image-0.3.2/src/lib.rs", Edition2021) }
+   1.492838423s  INFO prepare_target{force=false package_id=objc2-core-image v0.3.2 target="objc2_core_image"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/objc2-core-image-2ee46322d9135fa4/lib-objc2_core_image`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.494548181s  INFO prepare_target{force=false package_id=objc2-quartz-core v0.3.2 target="objc2_quartz_core"}: cargo::core::compiler::fingerprint: fingerprint error for objc2-quartz-core v0.3.2/Check { test: false }/TargetInner { ..: lib_target("objc2_quartz_core", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/objc2-quartz-core-0.3.2/src/lib.rs", Edition2021) }
+   1.494566832s  INFO prepare_target{force=false package_id=objc2-quartz-core v0.3.2 target="objc2_quartz_core"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/objc2-quartz-core-18f1328a518af912/lib-objc2_quartz_core`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.496614055s  INFO prepare_target{force=false package_id=objc2-web-kit v0.3.2 target="objc2_web_kit"}: cargo::core::compiler::fingerprint: fingerprint error for objc2-web-kit v0.3.2/Check { test: false }/TargetInner { ..: lib_target("objc2_web_kit", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/objc2-web-kit-0.3.2/src/lib.rs", Edition2021) }
+   1.496645759s  INFO prepare_target{force=false package_id=objc2-web-kit v0.3.2 target="objc2_web_kit"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/objc2-web-kit-f98dfd6da98f17c1/lib-objc2_web_kit`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.499440179s  INFO prepare_target{force=false package_id=plist v1.8.0 target="plist"}: cargo::core::compiler::fingerprint: fingerprint error for plist v1.8.0/Check { test: false }/TargetInner { ..: lib_target("plist", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/plist-1.8.0/src/lib.rs", Edition2021) }
+   1.499482389s  INFO prepare_target{force=false package_id=plist v1.8.0 target="plist"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/plist-df55bc9a4f40b48e/lib-plist`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.508906741s  INFO prepare_target{force=false package_id=tauri-runtime v2.10.0 target="tauri_runtime"}: cargo::core::compiler::fingerprint: fingerprint error for tauri-runtime v2.10.0/Check { test: false }/TargetInner { ..: lib_target("tauri_runtime", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-runtime-2.10.0/src/lib.rs", Edition2021) }
+   1.508940956s  INFO prepare_target{force=false package_id=tauri-runtime v2.10.0 target="tauri_runtime"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tauri-runtime-5a6650389ea3b0cc/lib-tauri_runtime`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.510943147s  INFO prepare_target{force=false package_id=tauri-utils v2.8.2 target="tauri_utils"}: cargo::core::compiler::fingerprint: fingerprint error for tauri-utils v2.8.2/Check { test: false }/TargetInner { ..: lib_target("tauri_utils", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-utils-2.8.2/src/lib.rs", Edition2021) }
+   1.510958758s  INFO prepare_target{force=false package_id=tauri-utils v2.8.2 target="tauri_utils"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tauri-utils-1e838700b2bc358b/lib-tauri_utils`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.514873893s  INFO prepare_target{force=false package_id=phf v0.11.3 target="phf"}: cargo::core::compiler::fingerprint: fingerprint error for phf v0.11.3/Check { test: false }/TargetInner { tested: false, ..: lib_target("phf", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/phf-0.11.3/src/lib.rs", Edition2021) }
+   1.514897524s  INFO prepare_target{force=false package_id=phf v0.11.3 target="phf"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/phf-7ad9d26fd95a8414/lib-phf`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.521648948s  INFO prepare_target{force=false package_id=tauri-runtime-wry v2.10.0 target="tauri_runtime_wry"}: cargo::core::compiler::fingerprint: fingerprint error for tauri-runtime-wry v2.10.0/Check { test: false }/TargetInner { ..: lib_target("tauri_runtime_wry", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-runtime-wry-2.10.0/src/lib.rs", Edition2021) }
+   1.521667516s  INFO prepare_target{force=false package_id=tauri-runtime-wry v2.10.0 target="tauri_runtime_wry"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tauri-runtime-wry-877d3b3501933278/lib-tauri_runtime_wry`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.523448633s  INFO prepare_target{force=false package_id=tao v0.34.5 target="tao"}: cargo::core::compiler::fingerprint: fingerprint error for tao v0.34.5/Check { test: false }/TargetInner { ..: lib_target("tao", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tao-0.34.5/src/lib.rs", Edition2021) }
+   1.523472825s  INFO prepare_target{force=false package_id=tao v0.34.5 target="tao"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tao-ccc2965fab2ba67f/lib-tao`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.524929153s  INFO prepare_target{force=false package_id=core-foundation v0.10.1 target="core_foundation"}: cargo::core::compiler::fingerprint: fingerprint error for core-foundation v0.10.1/Check { test: false }/TargetInner { ..: lib_target("core_foundation", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/core-foundation-0.10.1/src/lib.rs", Edition2021) }
+   1.524946547s  INFO prepare_target{force=false package_id=core-foundation v0.10.1 target="core_foundation"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/core-foundation-f05ea89138af456e/lib-core_foundation`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.525443768s  INFO prepare_target{force=false package_id=core-graphics v0.24.0 target="core_graphics"}: cargo::core::compiler::fingerprint: fingerprint error for core-graphics v0.24.0/Check { test: false }/TargetInner { ..: lib_target("core_graphics", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/core-graphics-0.24.0/src/lib.rs", Edition2018) }
+   1.525458206s  INFO prepare_target{force=false package_id=core-graphics v0.24.0 target="core_graphics"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/core-graphics-941705b754b9fdd1/lib-core_graphics`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.526085523s  INFO prepare_target{force=false package_id=core-graphics-types v0.2.0 target="core_graphics_types"}: cargo::core::compiler::fingerprint: fingerprint error for core-graphics-types v0.2.0/Check { test: false }/TargetInner { ..: lib_target("core_graphics_types", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/core-graphics-types-0.2.0/src/lib.rs", Edition2018) }
+   1.526098682s  INFO prepare_target{force=false package_id=core-graphics-types v0.2.0 target="core_graphics_types"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/core-graphics-types-adb37cf81b0e8fb9/lib-core_graphics_types`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: cargo::core::compiler::compile
+  12: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  13: cargo::ops::cargo_compile::compile_ws
+  14: cargo::ops::cargo_compile::compile_with_exec
+  15: cargo::ops::cargo_compile::compile
+  16: cargo::commands::check::exec
+  17: <cargo::cli::Exec>::exec
+  18: cargo::main
+  19: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  20: std::rt::lang_start::<()>::{closure#0}
+  21: std::rt::lang_start_internal
+  22: _main
+  23: <unknown>
+   1.528552749s  INFO prepare_target{force=false package_id=wry v0.54.1 target="wry"}: cargo::core::compiler::fingerprint: fingerprint error for wry v0.54.1/Check { test: false }/TargetInner { ..: lib_target("wry", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/wry-0.54.1/src/lib.rs", Edition2021) }
+   1.528572171s  INFO prepare_target{force=false package_id=wry v0.54.1 target="wry"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/wry-e8aba8e0aa40b682/lib-wry`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.531570217s  INFO prepare_target{force=false package_id=window-vibrancy v0.6.0 target="window_vibrancy"}: cargo::core::compiler::fingerprint: fingerprint error for window-vibrancy v0.6.0/Check { test: false }/TargetInner { ..: lib_target("window_vibrancy", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/window-vibrancy-0.6.0/src/lib.rs", Edition2021) }
+   1.531590297s  INFO prepare_target{force=false package_id=window-vibrancy v0.6.0 target="window_vibrancy"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/window-vibrancy-330fe70e8d1b8391/lib-window_vibrancy`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.532646252s  INFO prepare_target{force=false package_id=tauri-plugin-log v2.8.0 target="tauri_plugin_log"}: cargo::core::compiler::fingerprint: fingerprint error for tauri-plugin-log v2.8.0/Check { test: false }/TargetInner { ..: lib_target("tauri_plugin_log", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-plugin-log-2.8.0/src/lib.rs", Edition2021) }
+   1.532675815s  INFO prepare_target{force=false package_id=tauri-plugin-log v2.8.0 target="tauri_plugin_log"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tauri-plugin-log-110f1e321f76a2f6/lib-tauri_plugin_log`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   1.537872063s  INFO prepare_target{force=false package_id=tauri-plugin-shell v2.3.5 target="tauri_plugin_shell"}: cargo::core::compiler::fingerprint: fingerprint error for tauri-plugin-shell v2.3.5/Check { test: false }/TargetInner { ..: lib_target("tauri_plugin_shell", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tauri-plugin-shell-2.3.5/src/lib.rs", Edition2021) }
+   1.537891085s  INFO prepare_target{force=false package_id=tauri-plugin-shell v2.3.5 target="tauri_plugin_shell"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/tauri-plugin-shell-50c0304ff4a29d01/lib-tauri_plugin_shell`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   1.539539307s  INFO prepare_target{force=false package_id=open v5.3.3 target="open"}: cargo::core::compiler::fingerprint: fingerprint error for open v5.3.3/Check { test: false }/TargetInner { ..: lib_target("open", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/open-5.3.3/src/lib.rs", Edition2018) }
+   1.539559515s  INFO prepare_target{force=false package_id=open v5.3.3 target="open"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/open-935ce240f094da9a/lib-open`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.540332906s  INFO prepare_target{force=false package_id=os_pipe v1.2.3 target="os_pipe"}: cargo::core::compiler::fingerprint: fingerprint error for os_pipe v1.2.3/Check { test: false }/TargetInner { ..: lib_target("os_pipe", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_pipe-1.2.3/src/lib.rs", Edition2021) }
+   1.540348935s  INFO prepare_target{force=false package_id=os_pipe v1.2.3 target="os_pipe"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/os_pipe-d1dfc3cc0fdb7096/lib-os_pipe`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.540802950s  INFO prepare_target{force=false package_id=shared_child v1.1.1 target="shared_child"}: cargo::core::compiler::fingerprint: fingerprint error for shared_child v1.1.1/Check { test: false }/TargetInner { ..: lib_target("shared_child", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/lib.rs", Edition2021) }
+   1.540815819s  INFO prepare_target{force=false package_id=shared_child v1.1.1 target="shared_child"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/shared_child-8a7a2cc59a9860c0/lib-shared_child`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  10: cargo::ops::cargo_compile::compile_ws
+  11: cargo::ops::cargo_compile::compile_with_exec
+  12: cargo::ops::cargo_compile::compile
+  13: cargo::commands::check::exec
+  14: <cargo::cli::Exec>::exec
+  15: cargo::main
+  16: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  17: std::rt::lang_start::<()>::{closure#0}
+  18: std::rt::lang_start_internal
+  19: _main
+  20: <unknown>
+   1.541231117s  INFO prepare_target{force=false package_id=sigchld v0.2.4 target="sigchld"}: cargo::core::compiler::fingerprint: fingerprint error for sigchld v0.2.4/Check { test: false }/TargetInner { ..: lib_target("sigchld", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/sigchld-0.2.4/src/lib.rs", Edition2021) }
+   1.541242811s  INFO prepare_target{force=false package_id=sigchld v0.2.4 target="sigchld"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/sigchld-82a7749356f1dfdf/lib-sigchld`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  11: cargo::ops::cargo_compile::compile_ws
+  12: cargo::ops::cargo_compile::compile_with_exec
+  13: cargo::ops::cargo_compile::compile
+  14: cargo::commands::check::exec
+  15: <cargo::cli::Exec>::exec
+  16: cargo::main
+  17: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  18: std::rt::lang_start::<()>::{closure#0}
+  19: std::rt::lang_start_internal
+  20: _main
+  21: <unknown>
+   1.541683948s  INFO prepare_target{force=false package_id=signal-hook v0.3.18 target="signal_hook"}: cargo::core::compiler::fingerprint: fingerprint error for signal-hook v0.3.18/Check { test: false }/TargetInner { ..: lib_target("signal_hook", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/signal-hook-0.3.18/src/lib.rs", Edition2018) }
+   1.541695468s  INFO prepare_target{force=false package_id=signal-hook v0.3.18 target="signal_hook"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/signal-hook-2b576a845453073a/lib-signal_hook`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  12: cargo::ops::cargo_compile::compile_ws
+  13: cargo::ops::cargo_compile::compile_with_exec
+  14: cargo::ops::cargo_compile::compile
+  15: cargo::commands::check::exec
+  16: <cargo::cli::Exec>::exec
+  17: cargo::main
+  18: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  19: std::rt::lang_start::<()>::{closure#0}
+  20: std::rt::lang_start_internal
+  21: _main
+  22: <unknown>
+   1.542988668s  INFO prepare_target{force=false package_id=signal-hook-registry v1.4.8 target="signal_hook_registry"}: cargo::core::compiler::fingerprint: fingerprint error for signal-hook-registry v1.4.8/Check { test: false }/TargetInner { ..: lib_target("signal_hook_registry", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/signal-hook-registry-1.4.8/src/lib.rs", Edition2015) }
+   1.543003316s  INFO prepare_target{force=false package_id=signal-hook-registry v1.4.8 target="signal_hook_registry"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/signal-hook-registry-aaa318bb89932e1d/lib-signal_hook_registry`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: cargo::core::compiler::compile
+  12: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  13: cargo::ops::cargo_compile::compile_ws
+  14: cargo::ops::cargo_compile::compile_with_exec
+  15: cargo::ops::cargo_compile::compile
+  16: cargo::commands::check::exec
+  17: <cargo::cli::Exec>::exec
+  18: cargo::main
+  19: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  20: std::rt::lang_start::<()>::{closure#0}
+  21: std::rt::lang_start_internal
+  22: _main
+  23: <unknown>
+   1.543493523s  INFO prepare_target{force=false package_id=errno v0.3.14 target="errno"}: cargo::core::compiler::fingerprint: fingerprint error for errno v0.3.14/Check { test: false }/TargetInner { ..: lib_target("errno", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/errno-0.3.14/src/lib.rs", Edition2018) }
+   1.543507829s  INFO prepare_target{force=false package_id=errno v0.3.14 target="errno"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/errno-7d9dd98abead91dd/lib-errno`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: cargo::core::compiler::compile
+   9: cargo::core::compiler::compile
+  10: cargo::core::compiler::compile
+  11: cargo::core::compiler::compile
+  12: cargo::core::compiler::compile
+  13: <cargo::core::compiler::build_runner::BuildRunner>::compile
+  14: cargo::ops::cargo_compile::compile_ws
+  15: cargo::ops::cargo_compile::compile_with_exec
+  16: cargo::ops::cargo_compile::compile
+  17: cargo::commands::check::exec
+  18: <cargo::cli::Exec>::exec
+  19: cargo::main
+  20: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  21: std::rt::lang_start::<()>::{closure#0}
+  22: std::rt::lang_start_internal
+  23: _main
+  24: <unknown>
+   1.544088777s  INFO prepare_target{force=false package_id=urlencoding v2.1.3 target="urlencoding"}: cargo::core::compiler::fingerprint: fingerprint error for urlencoding v2.1.3/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("urlencoding", ["lib"], "/Users/maxwellisaacs/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/urlencoding-2.1.3/src/lib.rs", Edition2021) }
+   1.544102926s  INFO prepare_target{force=false package_id=urlencoding v2.1.3 target="urlencoding"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/urlencoding-88b43291dd241db4/lib-urlencoding`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: cargo::core::compiler::compile
+   8: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   9: cargo::ops::cargo_compile::compile_ws
+  10: cargo::ops::cargo_compile::compile_with_exec
+  11: cargo::ops::cargo_compile::compile
+  12: cargo::commands::check::exec
+  13: <cargo::cli::Exec>::exec
+  14: cargo::main
+  15: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  16: std::rt::lang_start::<()>::{closure#0}
+  17: std::rt::lang_start_internal
+  18: _main
+  19: <unknown>
+   1.544520695s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app_lib"}: cargo::core::compiler::fingerprint: fingerprint error for app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)/Check { test: true }/TargetInner { ..: lib_target("app_lib", ["staticlib", "cdylib", "rlib"], "/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/src/lib.rs", Edition2021) }
+   1.544533556s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app_lib"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/app-7fad73cfeaee2f9d/test-lib-app_lib`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+  18: <unknown>
+   1.546980617s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint: fingerprint error for app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)/Check { test: false }/TargetInner { name: "app", doc: true, ..: with_path("/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/src/main.rs", Edition2021) }
+   1.547002866s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/app-8b06d78e9d6b8ceb/bin-app`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+  18: <unknown>
+   1.551038099s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint: fingerprint error for app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)/Check { test: true }/TargetInner { name: "app", doc: true, ..: with_path("/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/src/main.rs", Edition2021) }
+   1.551236486s  INFO prepare_target{force=false package_id=app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri) target="app"}: cargo::core::compiler::fingerprint:     err: failed to read `/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri/target/debug/.fingerprint/app-cc0d33dc6bda1560/test-bin-app`
+
+Caused by:
+    No such file or directory (os error 2)
+
+Stack backtrace:
+   0: std::backtrace::Backtrace::create
+   1: std::backtrace::Backtrace::capture
+   2: cargo_util::paths::read_bytes
+   3: cargo_util::paths::read
+   4: cargo::core::compiler::fingerprint::_compare_old_fingerprint
+   5: cargo::core::compiler::fingerprint::prepare_target
+   6: cargo::core::compiler::compile
+   7: <cargo::core::compiler::build_runner::BuildRunner>::compile
+   8: cargo::ops::cargo_compile::compile_ws
+   9: cargo::ops::cargo_compile::compile_with_exec
+  10: cargo::ops::cargo_compile::compile
+  11: cargo::commands::check::exec
+  12: <cargo::cli::Exec>::exec
+  13: cargo::main
+  14: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  15: std::rt::lang_start::<()>::{closure#0}
+  16: std::rt::lang_start_internal
+  17: _main
+  18: <unknown>
+    Checking libc v0.2.180
+    Checking phf v0.11.3
+    Checking coreaudio-sys v0.2.17
+    Checking memoffset v0.6.5
+    Checking downcast-rs v1.2.1
+    Checking shell-words v1.1.1
+    Checking id3 v1.16.4
+    Checking urlencoding v2.1.3
+    Checking tauri-utils v2.8.2
+    Checking objc2-foundation v0.3.2
+    Checking mio v1.1.1
+    Checking socket2 v0.6.2
+    Checking num_threads v0.1.7
+    Checking core-foundation v0.10.1
+    Checking dirs-sys v0.5.0
+    Checking time v0.3.36
+    Checking getrandom v0.2.17
+    Checking ring v0.17.14
+    Checking dirs v6.0.0
+    Checking errno v0.3.14
+    Checking os_pipe v1.2.3
+    Checking core-graphics-types v0.2.0
+    Checking signal-hook-registry v1.4.8
+    Checking ioctl-rs v0.1.6
+    Checking core-graphics v0.24.0
+    Checking termios v0.2.2
+    Checking tokio v1.49.0
+    Checking signal-hook v0.3.18
+    Checking getrandom v0.3.4
+    Checking serial-core v0.4.0
+    Checking sigchld v0.2.4
+    Checking coreaudio-rs v0.11.3
+    Checking serial-unix v0.4.0
+    Checking mach2 v0.4.3
+    Checking serial v0.4.0
+    Checking shared_child v1.1.1
+    Checking parking_lot_core v0.9.12
+    Checking open v5.3.3
+    Checking filedescriptor v0.8.3
+    Checking cpal v0.15.3
+    Checking nix v0.25.1
+    Checking parking_lot v0.12.5
+    Checking rodio v0.19.0
+    Checking cookie v0.18.1
+    Checking plist v1.8.0
+    Checking rustls-webpki v0.103.9
+    Checking rustls v0.23.36
+    Checking portable-pty v0.8.1
+    Checking hyper v1.8.1
+    Checking tower v0.5.3
+    Checking tokio-rustls v0.26.4
+    Checking tower-http v0.6.8
+    Checking hyper-util v0.1.20
+    Checking hyper-rustls v0.27.7
+    Checking reqwest v0.12.28
+    Checking objc2-quartz-core v0.3.2
+    Checking objc2-cloud-kit v0.3.2
+    Checking objc2-core-image v0.3.2
+    Checking objc2-core-data v0.3.2
+    Checking objc2-app-kit v0.3.2
+    Checking objc2-web-kit v0.3.2
+    Checking tao v0.34.5
+    Checking window-vibrancy v0.6.0
+    Checking muda v0.17.1
+cargo(32873) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+cargo(32874) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+cargo(32875) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+cargo(32876) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+    Checking wry v0.54.1
+    Checking tauri-runtime v2.10.0
+cargo(32883) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+cargo(32884) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+    Checking tauri-runtime-wry v2.10.0
+cargo(32885) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+    Checking tauri v2.10.1
+cargo(32886) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+    Checking tauri-plugin-log v2.8.0
+    Checking tauri-plugin-shell v2.3.5
+cargo(32888) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+cargo(32889) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+    Checking app v0.1.0 (/Users/maxwellisaacs/Downloads/GuteMusik-master/src-tauri)
+cargo(32903) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+cargo(32904) MallocStackLogging: can't turn off malloc stack logging because it was not enabled.
+error: could not compile `app` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `app` (lib) due to 1 previous error

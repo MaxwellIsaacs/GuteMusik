@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use id3::TagLike;
@@ -74,6 +75,13 @@ pub struct DownloadState {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ActiveTrack {
+    pub track_index: usize,
+    pub track_name: String,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlbumDownloadState {
     pub artist: String,
     pub album: String,
@@ -81,6 +89,7 @@ pub struct AlbumDownloadState {
     pub completed_tracks: usize,
     pub total_tracks: usize,
     pub error: Option<String>,
+    pub active_tracks: Vec<ActiveTrack>,
 }
 
 /// Represents a queued work item for the download worker.
@@ -357,9 +366,6 @@ fn ensure_worker(app: &AppHandle, inner: &Arc<DownloaderStateInner>) {
                     );
                 }
             }
-
-            // Brief pause between items
-            std::thread::sleep(std::time::Duration::from_millis(500));
         }
 
         // Worker done
@@ -561,6 +567,7 @@ pub fn downloader_start(
                 completed_tracks: 0,
                 total_tracks: 0,
                 error: None,
+                active_tracks: vec![],
             });
         }
     }
@@ -595,6 +602,7 @@ pub fn downloader_download_songs(
                 completed_tracks: 0,
                 total_tracks: 1,
                 error: None,
+                active_tracks: vec![],
             });
         }
     }
@@ -668,6 +676,205 @@ fn sanitize_filename(name: &str) -> String {
         .to_string()
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// Concurrent download helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+fn emit_track_progress(
+    app: &AppHandle,
+    album_idx: usize,
+    total_albums: usize,
+    req: &AlbumRequest,
+    track_idx: usize,
+    total_tracks: usize,
+    track_name: &str,
+    status: &str,
+    error: Option<&str>,
+) {
+    let _ = app.emit(
+        "download-progress",
+        DownloadProgress {
+            album_index: album_idx,
+            total_albums,
+            artist: req.artist.clone(),
+            album: req.album.clone(),
+            track_index: track_idx,
+            total_tracks,
+            track_name: track_name.to_string(),
+            status: status.to_string(),
+            error: error.map(|e| e.to_string()),
+        },
+    );
+}
+
+fn update_album_completed(dl_state: &DownloaderStateInner, album_idx: usize, count: usize) {
+    let mut s = dl_state.state.lock().unwrap();
+    if album_idx < s.albums.len() {
+        s.albums[album_idx].completed_tracks = count;
+    }
+}
+
+fn add_active_track(
+    dl_state: &DownloaderStateInner,
+    album_idx: usize,
+    track_idx: usize,
+    track_name: &str,
+    status: &str,
+) {
+    let mut s = dl_state.state.lock().unwrap();
+    if album_idx < s.albums.len() {
+        s.albums[album_idx].active_tracks.push(ActiveTrack {
+            track_index: track_idx,
+            track_name: track_name.to_string(),
+            status: status.to_string(),
+        });
+    }
+}
+
+fn update_active_track_status(
+    dl_state: &DownloaderStateInner,
+    album_idx: usize,
+    track_idx: usize,
+    status: &str,
+) {
+    let mut s = dl_state.state.lock().unwrap();
+    if album_idx < s.albums.len() {
+        if let Some(at) = s.albums[album_idx]
+            .active_tracks
+            .iter_mut()
+            .find(|t| t.track_index == track_idx)
+        {
+            at.status = status.to_string();
+        }
+    }
+}
+
+fn remove_active_track(dl_state: &DownloaderStateInner, album_idx: usize, track_idx: usize) {
+    let mut s = dl_state.state.lock().unwrap();
+    if album_idx < s.albums.len() {
+        s.albums[album_idx]
+            .active_tracks
+            .retain(|t| t.track_index != track_idx);
+    }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Per-track download logic (called from concurrent workers)
+// ────────────────────────────────────────────────────────────────────────────
+
+fn process_single_track(
+    app: &AppHandle,
+    dl_state: &DownloaderStateInner,
+    album_idx: usize,
+    total_albums: usize,
+    req: &AlbumRequest,
+    ytdlp: &str,
+    track_idx: usize,
+    track_name: &str,
+    total_tracks: usize,
+    cover_data: Option<&[u8]>,
+    album_dir: &Path,
+    completed: &AtomicUsize,
+    cancelled: &AtomicBool,
+) {
+    let track_num = format!("{:02}", track_idx + 1);
+    let safe_track = sanitize_filename(track_name);
+    let filename = format!("{track_num}-{safe_track}.mp3");
+    let filepath = album_dir.join(&filename);
+
+    // Skip if exists
+    if filepath.exists() {
+        let new_count = completed.fetch_add(1, Ordering::Relaxed) + 1;
+        update_album_completed(dl_state, album_idx, new_count);
+        emit_track_progress(
+            app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "done", None,
+        );
+        return;
+    }
+
+    // Register as active and search YouTube
+    add_active_track(dl_state, album_idx, track_idx, track_name, "searching");
+    emit_track_progress(
+        app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "searching", None,
+    );
+
+    let vid_id = search_youtube(ytdlp, &req.artist, track_name);
+    if vid_id.is_none() {
+        remove_active_track(dl_state, album_idx, track_idx);
+        emit_track_progress(
+            app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "error",
+            Some("Not found on YouTube"),
+        );
+        return;
+    }
+    let vid_id = vid_id.unwrap();
+
+    // Check cancel between search and download
+    if *dl_state.cancel.lock().unwrap() {
+        cancelled.store(true, Ordering::Relaxed);
+        remove_active_track(dl_state, album_idx, track_idx);
+        return;
+    }
+
+    // Download
+    update_active_track_status(dl_state, album_idx, track_idx, "downloading");
+    emit_track_progress(
+        app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "downloading",
+        None,
+    );
+
+    let temp_path = album_dir.join(format!("{track_num}-{safe_track}.%(ext)s"));
+    let dl_ok = download_track(ytdlp, &vid_id, temp_path.to_str().unwrap_or(""));
+
+    if !dl_ok {
+        remove_active_track(dl_state, album_idx, track_idx);
+        emit_track_progress(
+            app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "error",
+            Some("Download failed"),
+        );
+        return;
+    }
+
+    // Check cancel between download and tagging
+    if *dl_state.cancel.lock().unwrap() {
+        cancelled.store(true, Ordering::Relaxed);
+        remove_active_track(dl_state, album_idx, track_idx);
+        return;
+    }
+
+    // Tag
+    update_active_track_status(dl_state, album_idx, track_idx, "tagging");
+    emit_track_progress(
+        app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "tagging", None,
+    );
+
+    tag_track(
+        &filepath,
+        track_name,
+        &req.artist,
+        &req.album,
+        &req.year,
+        track_idx + 1,
+        total_tracks,
+        &req.genre,
+        cover_data,
+    );
+
+    // Complete
+    let new_count = completed.fetch_add(1, Ordering::Relaxed) + 1;
+    remove_active_track(dl_state, album_idx, track_idx);
+    update_album_completed(dl_state, album_idx, new_count);
+    emit_track_progress(
+        app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "done", None,
+    );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Album download (concurrent tracks)
+// ────────────────────────────────────────────────────────────────────────────
+
+const MAX_CONCURRENT_TRACKS: usize = 3;
+
 fn download_album(
     app: &AppHandle,
     dl_state: &DownloaderStateInner,
@@ -686,37 +893,15 @@ fn download_album(
         .map_err(|e| format!("Failed to create directory: {e}"))?;
 
     // Fetch cover
-    let _ = app.emit(
-        "download-progress",
-        DownloadProgress {
-            album_index: album_idx,
-            total_albums,
-            artist: req.artist.clone(),
-            album: req.album.clone(),
-            track_index: 0,
-            total_tracks: 0,
-            track_name: String::new(),
-            status: "fetching_cover".into(),
-            error: None,
-        },
+    emit_track_progress(
+        app, album_idx, total_albums, req, 0, 0, "", "fetching_cover", None,
     );
 
     let cover_data = fetch_cover(&req.artist, &req.album);
 
     // Fetch tracklist
-    let _ = app.emit(
-        "download-progress",
-        DownloadProgress {
-            album_index: album_idx,
-            total_albums,
-            artist: req.artist.clone(),
-            album: req.album.clone(),
-            track_index: 0,
-            total_tracks: 0,
-            track_name: String::new(),
-            status: "fetching_tracklist".into(),
-            error: None,
-        },
+    emit_track_progress(
+        app, album_idx, total_albums, req, 0, 0, "", "fetching_tracklist", None,
     );
 
     let tracks = if let Some(ref t) = req.tracks {
@@ -738,163 +923,52 @@ fn download_album(
         }
     }
 
-    for (track_idx, track_name) in tracks.iter().enumerate() {
-        // Check cancel
-        if *dl_state.cancel.lock().unwrap() {
-            return Err("Cancelled".into());
-        }
+    // Concurrent track downloads using scoped threads + crossbeam channel
+    let completed = AtomicUsize::new(0);
+    let cancelled = AtomicBool::new(false);
+    let cover_ref: Option<&[u8]> = cover_data.as_deref();
 
-        let track_num = format!("{:02}", track_idx + 1);
-        let safe_track = sanitize_filename(track_name);
-        let filename = format!("{track_num}-{safe_track}.mp3");
-        let filepath = album_dir.join(&filename);
+    let (sender, receiver) = crossbeam_channel::bounded::<(usize, String)>(tracks.len());
+    for (i, name) in tracks.iter().enumerate() {
+        let _ = sender.send((i, name.clone()));
+    }
+    drop(sender);
 
-        // Skip if exists
-        if filepath.exists() {
-            let mut s = dl_state.state.lock().unwrap();
-            if album_idx < s.albums.len() {
-                s.albums[album_idx].completed_tracks = track_idx + 1;
+    let num_workers = MAX_CONCURRENT_TRACKS.min(total_tracks);
+
+    let cancelled_ref = &cancelled;
+    let completed_ref = &completed;
+    let album_dir_ref = &album_dir;
+
+    std::thread::scope(|scope| {
+        for worker_id in 0..num_workers {
+            let recv = receiver.clone();
+            // Stagger worker starts to avoid simultaneous YouTube searches
+            if worker_id > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(500));
             }
-            let _ = app.emit(
-                "download-progress",
-                DownloadProgress {
-                    album_index: album_idx,
-                    total_albums,
-                    artist: req.artist.clone(),
-                    album: req.album.clone(),
-                    track_index: track_idx,
-                    total_tracks,
-                    track_name: track_name.clone(),
-                    status: "done".into(),
-                    error: None,
-                },
-            );
-            continue;
+
+            scope.spawn(move || {
+                while let Ok((track_idx, track_name)) = recv.recv() {
+                    if cancelled_ref.load(Ordering::Relaxed)
+                        || *dl_state.cancel.lock().unwrap()
+                    {
+                        cancelled_ref.store(true, Ordering::Relaxed);
+                        break;
+                    }
+
+                    process_single_track(
+                        app, dl_state, album_idx, total_albums, req, ytdlp, track_idx,
+                        &track_name, total_tracks, cover_ref, album_dir_ref, completed_ref,
+                        cancelled_ref,
+                    );
+                }
+            });
         }
+    });
 
-        // Search YouTube
-        let _ = app.emit(
-            "download-progress",
-            DownloadProgress {
-                album_index: album_idx,
-                total_albums,
-                artist: req.artist.clone(),
-                album: req.album.clone(),
-                track_index: track_idx,
-                total_tracks,
-                track_name: track_name.clone(),
-                status: "searching".into(),
-                error: None,
-            },
-        );
-
-        let vid_id = search_youtube(ytdlp, &req.artist, track_name);
-        if vid_id.is_none() {
-            let _ = app.emit(
-                "download-progress",
-                DownloadProgress {
-                    album_index: album_idx,
-                    total_albums,
-                    artist: req.artist.clone(),
-                    album: req.album.clone(),
-                    track_index: track_idx,
-                    total_tracks,
-                    track_name: track_name.clone(),
-                    status: "error".into(),
-                    error: Some("Not found on YouTube".into()),
-                },
-            );
-            continue;
-        }
-        let vid_id = vid_id.unwrap();
-
-        // Download
-        let _ = app.emit(
-            "download-progress",
-            DownloadProgress {
-                album_index: album_idx,
-                total_albums,
-                artist: req.artist.clone(),
-                album: req.album.clone(),
-                track_index: track_idx,
-                total_tracks,
-                track_name: track_name.clone(),
-                status: "downloading".into(),
-                error: None,
-            },
-        );
-
-        let temp_path = album_dir.join(format!("{track_num}-{safe_track}.%(ext)s"));
-        let dl_ok = download_track(ytdlp, &vid_id, temp_path.to_str().unwrap_or(""));
-
-        if !dl_ok {
-            let _ = app.emit(
-                "download-progress",
-                DownloadProgress {
-                    album_index: album_idx,
-                    total_albums,
-                    artist: req.artist.clone(),
-                    album: req.album.clone(),
-                    track_index: track_idx,
-                    total_tracks,
-                    track_name: track_name.clone(),
-                    status: "error".into(),
-                    error: Some("Download failed".into()),
-                },
-            );
-            continue;
-        }
-
-        // Tag
-        let _ = app.emit(
-            "download-progress",
-            DownloadProgress {
-                album_index: album_idx,
-                total_albums,
-                artist: req.artist.clone(),
-                album: req.album.clone(),
-                track_index: track_idx,
-                total_tracks,
-                track_name: track_name.clone(),
-                status: "tagging".into(),
-                error: None,
-            },
-        );
-
-        tag_track(
-            &filepath,
-            track_name,
-            &req.artist,
-            &req.album,
-            &req.year,
-            track_idx + 1,
-            total_tracks,
-            &req.genre,
-            cover_data.as_deref(),
-        );
-
-        // Mark done
-        {
-            let mut s = dl_state.state.lock().unwrap();
-            if album_idx < s.albums.len() {
-                s.albums[album_idx].completed_tracks = track_idx + 1;
-            }
-        }
-
-        let _ = app.emit(
-            "download-progress",
-            DownloadProgress {
-                album_index: album_idx,
-                total_albums,
-                artist: req.artist.clone(),
-                album: req.album.clone(),
-                track_index: track_idx,
-                total_tracks,
-                track_name: track_name.clone(),
-                status: "done".into(),
-                error: None,
-            },
-        );
+    if cancelled.load(Ordering::Relaxed) {
+        return Err("Cancelled".into());
     }
 
     Ok(())

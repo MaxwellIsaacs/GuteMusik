@@ -169,6 +169,7 @@ type ViewMode = 'flat' | 'time';
 
 export const LibraryView: React.FC<LibraryViewProps> = ({ onPlayAlbum, onNavigateToAlbum, onNavigateToArtist, onContextMenu, onPlayTrack, returnToAlbumId, onReturnHandled, scrollContainer }) => {
   const { state, albums, isLoadingAlbums, refreshAlbums, starredTracks, starredAlbums, isLoadingStarred, refreshStarred, toggleStar } = useServer();
+
   // Filter state (like ArtistView)
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('time');

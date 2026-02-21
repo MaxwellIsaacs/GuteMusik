@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { CircleNotch, Warning, ShieldWarning, Trash, Upload } from '@phosphor-icons/react';
+import { CircleNotch, Warning, ShieldWarning, Trash, Upload, Folder } from '@phosphor-icons/react';
 import { ChromeIcon } from '../components/ChromeIcon';
 import { useServer } from '../context/ServerContext';
 import { PluginDefinition } from '../types';
@@ -12,6 +12,7 @@ interface ServerConfigProps {
     onTogglePlugin: (id: string) => void;
     onDeletePlugin: (id: string) => void;
     onImportPlugin: (file: File) => void;
+    onImportPluginFolder: (files: FileList) => void;
 }
 
 export const ServerConfig: React.FC<ServerConfigProps> = ({
@@ -22,6 +23,7 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
     onTogglePlugin,
     onDeletePlugin,
     onImportPlugin,
+    onImportPluginFolder,
 }) => {
     const { state, connect, disconnect } = useServer();
 
@@ -31,7 +33,9 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
     const [localError, setLocalError] = useState<string | null>(null);
     const [showConfirmDisconnect, setShowConfirmDisconnect] = useState(false);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const folderInputRef = useRef<HTMLInputElement>(null);
 
     const isInsecureRemote = serverUrl.startsWith('http://') && !serverUrl.includes('localhost') && !serverUrl.includes('127.0.0.1');
 
@@ -203,13 +207,22 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
             <section>
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-sm font-bold tracking-[0.2em] text-white/40 uppercase">Plugins</h2>
-                    <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white uppercase tracking-wider transition-colors"
-                    >
-                        <Upload size={14} weight="bold" />
-                        Import
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => folderInputRef.current?.click()}
+                            className="flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white uppercase tracking-wider transition-colors"
+                        >
+                            <Folder size={14} weight="bold" />
+                            Folder
+                        </button>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white uppercase tracking-wider transition-colors"
+                        >
+                            <Upload size={14} weight="bold" />
+                            File
+                        </button>
+                    </div>
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -223,10 +236,70 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
                             }
                         }}
                     />
+                    <input
+                        ref={folderInputRef}
+                        type="file"
+                        // @ts-ignore - webkitdirectory is a non-standard attribute
+                        webkitdirectory=""
+                        directory=""
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                            const files = e.target.files;
+                            if (files && files.length > 0) {
+                                onImportPluginFolder(files);
+                                e.target.value = '';
+                            }
+                        }}
+                    />
+                </div>
+
+                {/* Drag and drop zone */}
+                <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragging(false);
+                        const items = e.dataTransfer.items;
+                        if (items.length > 0) {
+                            // Check if it's a folder
+                            const firstItem = items[0];
+                            if (firstItem.webkitGetAsEntry) {
+                                const entry = firstItem.webkitGetAsEntry();
+                                if (entry?.isDirectory) {
+                                    // Handle folder drop via DataTransferItemList
+                                    const files = e.dataTransfer.files;
+                                    if (files.length > 0) {
+                                        onImportPluginFolder(files);
+                                    }
+                                    return;
+                                }
+                            }
+                            // Otherwise it's a file
+                            const file = e.dataTransfer.files[0];
+                            if (file && (file.name.endsWith('.gutemusik') || file.name.endsWith('.zip'))) {
+                                onImportPlugin(file);
+                            }
+                        }
+                    }}
+                    className={`mb-6 p-8 border-2 border-dashed rounded-2xl text-center transition-colors ${
+                        isDragging
+                            ? 'border-purple-500 bg-purple-500/10'
+                            : 'border-white/10 hover:border-white/20'
+                    }`}
+                >
+                    <div className="text-white/30 text-sm">
+                        {isDragging ? (
+                            <span className="text-purple-400">Drop plugin folder or .gutemusik file</span>
+                        ) : (
+                            <span>Drag a plugin folder or .gutemusik file here</span>
+                        )}
+                    </div>
                 </div>
 
                 {plugins.length === 0 ? (
-                    <div className="py-12 text-center">
+                    <div className="py-8 text-center">
                         <p className="text-white/20 text-sm">No plugins installed.</p>
                     </div>
                 ) : (
