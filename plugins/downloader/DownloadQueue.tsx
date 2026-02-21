@@ -14,6 +14,12 @@ interface DownloadProgress {
   error: string | null;
 }
 
+interface ActiveTrack {
+  track_index: number;
+  track_name: string;
+  status: string;
+}
+
 interface AlbumState {
   artist: string;
   album: string;
@@ -23,6 +29,7 @@ interface AlbumState {
   error: string | null;
   currentTrack?: string;
   currentTrackStatus?: string;
+  active_tracks: ActiveTrack[];
 }
 
 interface DownloadQueueProps {
@@ -73,10 +80,13 @@ export const DownloadQueue: React.FC<DownloadQueueProps> = ({ onToast, onAllComp
         if (next[p.album_index]) {
           next[p.album_index] = {
             ...next[p.album_index],
-            completed_tracks: p.status === 'done' ? p.track_index + 1 : next[p.album_index].completed_tracks,
-            total_tracks: p.total_tracks,
-            currentTrack: p.track_name,
-            currentTrackStatus: p.status,
+            completed_tracks: p.status === 'done'
+              ? next[p.album_index].completed_tracks + 1
+              : next[p.album_index].completed_tracks,
+            total_tracks: p.total_tracks || next[p.album_index].total_tracks,
+            // Keep currentTrack for single-song downloads only
+            currentTrack: p.total_tracks === 1 ? p.track_name : next[p.album_index].currentTrack,
+            currentTrackStatus: p.total_tracks === 1 ? p.status : next[p.album_index].currentTrackStatus,
           };
         }
         return next;
@@ -246,8 +256,20 @@ export const DownloadQueue: React.FC<DownloadQueueProps> = ({ onToast, onAllComp
               </div>
             )}
 
-            {/* Current track status */}
-            {a.currentTrack && a.status === 'downloading' && (
+            {/* Active tracks (concurrent downloads) */}
+            {a.active_tracks?.length > 0 && a.status === 'downloading' && (
+              <div className="space-y-1">
+                {a.active_tracks.map((at) => (
+                  <div key={at.track_index} className="text-[11px] text-white/30 truncate">
+                    <span className="text-white/50">{statusLabel(at.status)}</span>
+                    {' '}
+                    {at.track_name}
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Fallback for single-song downloads */}
+            {(!a.active_tracks || a.active_tracks.length === 0) && a.currentTrack && a.status === 'downloading' && (
               <div className="text-[11px] text-white/30 truncate">
                 <span className="text-white/50">{statusLabel(a.currentTrackStatus || '')}</span>
                 {' '}

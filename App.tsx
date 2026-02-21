@@ -20,7 +20,7 @@ import { ViewState, ContextMenuState, Playlist, PluginDefinition } from './types
 import { useAudio } from './context/AudioContext';
 import { useServer } from './context/ServerContext';
 import { builtinPlugins } from './plugins';
-import { initPluginAPI, loadInstalledPlugins, importPlugin, removePlugin, getDynamicPlugins, getInstalledPlugins } from './services/pluginLoader';
+import { initPluginAPI, loadInstalledPlugins, importPlugin, importPluginFolder, removePlugin, getDynamicPlugins, getInstalledPlugins } from './services/pluginLoader';
 
 const DISABLED_PLUGINS_KEY = 'gutemusik:disabled-plugins';
 
@@ -94,7 +94,8 @@ const NewPlaylistWizard: React.FC<{ isLinux: boolean; onClose: () => void; onCre
 const App = () => {
   const { isLinux } = usePlatform();
   const { state: audioState, playTrack, togglePlay, next: nextTrack, previous: previousTrack, toggleMute, setVolume } = useAudio();
-  const { searchQuery, searchResults, isSearching, search, clearSearch, addToQueue, toggleStar, albums, playlists, createPlaylist, addToPlaylist } = useServer();
+  const serverContext = useServer();
+  const { searchQuery, searchResults, isSearching, search, clearSearch, addToQueue, toggleStar, albums, playlists, createPlaylist, addToPlaylist } = serverContext;
   const isPlaying = audioState.isPlaying;
 
   // Apply Linux performance class to body for global CSS overrides
@@ -115,8 +116,13 @@ const App = () => {
     setDynamicPlugins(loaded);
   }, []);
 
-  // Merge built-in and dynamic plugins
-  const plugins = useMemo(() => [...builtinPlugins, ...dynamicPlugins], [dynamicPlugins]);
+  // Merge built-in and dynamic plugins (dynamic/imported plugins override built-in with same ID)
+  const plugins = useMemo(() => {
+    const byId = new Map<string, PluginDefinition>();
+    for (const p of builtinPlugins) byId.set(p.id, p);
+    for (const p of dynamicPlugins) byId.set(p.id, p); // Override built-in
+    return Array.from(byId.values());
+  }, [dynamicPlugins]);
   const enabledPlugins = useMemo(() => plugins.filter(p => !disabledPlugins.includes(p.id)), [plugins, disabledPlugins]);
 
   // Search state
@@ -214,6 +220,16 @@ const App = () => {
       showToast(`Installed: ${result.plugin.name}`);
     } else {
       showToast(result.error || 'Failed to import plugin');
+    }
+  }, [showToast]);
+
+  const handleImportPluginFolder = useCallback(async (files: FileList) => {
+    const result = await importPluginFolder(files);
+    if (result.success && result.plugin) {
+      setDynamicPlugins(getDynamicPlugins());
+      showToast(`Installed: ${result.plugin.name}`);
+    } else {
+      showToast(result.error || 'Failed to import plugin folder');
     }
   }, [showToast]);
 
@@ -415,6 +431,7 @@ const App = () => {
             onTogglePlugin={handleTogglePlugin}
             onDeletePlugin={handleDeletePlugin}
             onImportPlugin={handleImportPlugin}
+            onImportPluginFolder={handleImportPluginFolder}
         />;
       default: {
         // Check for plugin views (Plugin:my-plugin-id)
@@ -429,6 +446,9 @@ const App = () => {
               onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
               onContextMenu={handleContextMenu}
               onToast={showToast}
+              serverState={serverContext.state}
+              refreshAlbums={serverContext.refreshAlbums}
+              refreshArtists={serverContext.refreshArtists}
             />;
           }
         }

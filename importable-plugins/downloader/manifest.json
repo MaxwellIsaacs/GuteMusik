@@ -1,0 +1,8 @@
+{
+  "id": "downloader",
+  "name": "Downloader",
+  "version": "1.0.0",
+  "author": "GuteMusik",
+  "description": "Download albums and songs with MusicBrainz metadata tagging",
+  "icon": "download"
+}
