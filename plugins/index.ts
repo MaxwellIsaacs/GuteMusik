@@ -1,15 +1,9 @@
 import { PluginDefinition } from '../types';
-import stats from './stats';
 import downloader from './downloader';
-import visuals from './visuals';
-import terminal from './terminal';
 
-// Built-in plugins (bundled with app)
+// Alpha release: downloader only
 const allBuiltinPlugins: PluginDefinition[] = [
-  stats,
   downloader,
-  visuals,
-  terminal,
 ];
 
 // Set VITE_ENABLE_PLUGINS=true to include built-in plugins in build
