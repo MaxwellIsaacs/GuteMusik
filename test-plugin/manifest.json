@@ -1,0 +1,8 @@
+{
+  "id": "test-plugin",
+  "name": "Test Plugin",
+  "version": "1.0.0",
+  "author": "Test",
+  "description": "A test plugin to verify import/delete functionality",
+  "icon": "star"
+}

@@ -1,19 +1,22 @@
 // GuteMusik Plugin Template
-// This file gets bundled into index.js
+// This file gets bundled into index.js via build.sh
 
-// Access React from the global GuteMusik API (don't import it)
-const { React } = window.GuteMusik;
-const { useState, useEffect } = React;
+// Access React and the plugin API from the global GuteMusik object
+const { React, usePluginAPI } = window.GuteMusik;
+const { useState } = React;
 
 // Define your plugin view component
-// It receives these props from GuteMusik:
-// - onPlayTrack(track, queue?) - Play a track
-// - onNavigateToAlbum(id) - Navigate to album view
-// - onNavigateToArtist(id) - Navigate to artist view
-// - onContextMenu(event, item, type) - Show context menu
-// - onToast(message) - Show a toast notification
-const MyPluginView = ({ onToast }) => {
+// Use usePluginAPI() to access audio, library, navigation, toasts, storage, and IPC
+const MyPluginView = () => {
+  const api = usePluginAPI();
   const [count, setCount] = useState(0);
+
+  // api.audio    - playback state, controls (play, pause, next, seek, etc.)
+  // api.library  - albums, artists, playlists, search, starred items
+  // api.nav      - navigateToAlbum(id), navigateToArtist(id)
+  // api.ui       - toast(message), contextMenu(event, item, type)
+  // api.storage  - get<T>(key), set(key, value), remove(key) — auto-scoped to plugin
+  // api.ipc      - invoke(cmd, args), listen(event, handler) — Tauri IPC
 
   return React.createElement('div', { className: 'p-8' },
     React.createElement('h1', { className: 'text-4xl font-bold text-white mb-4' }, 'My Plugin'),
@@ -23,7 +26,7 @@ const MyPluginView = ({ onToast }) => {
         className: 'px-6 py-3 bg-white text-black rounded-full font-bold hover:scale-105 transition-transform',
         onClick: () => {
           setCount(c => c + 1);
-          onToast(`Count: ${count + 1}`);
+          api.ui.toast(`Count: ${count + 1}`);
         }
       }, `Clicked ${count} times`)
     )
@@ -34,6 +37,6 @@ const MyPluginView = ({ onToast }) => {
 window.GuteMusik.registerPlugin({
   id: 'my-plugin',        // Must match manifest.json id
   label: 'My Plugin',     // Shown in sidebar
-  icon: 'music-note',     // ChromeIcon name (see ChromeIcon.tsx for options)
+  icon: 'music-note',     // ChromeIcon name (see public/ for options)
   view: MyPluginView,     // Your React component
 });

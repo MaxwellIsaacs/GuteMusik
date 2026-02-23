@@ -1,21 +1,19 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { invoke } from '@tauri-apps/api/core';
-import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { PluginViewProps } from '../../types';
+import { usePluginAPI } from '../../context/PluginContext';
 import '@xterm/xterm/css/xterm.css';
 
-const STORAGE_KEY = 'lumina-terminal-cwd';
-
-export const TerminalView: React.FC<PluginViewProps> = ({ onToast }) => {
+export const TerminalView: React.FC = () => {
+  const api = usePluginAPI();
+  const { invoke, listen } = api.ipc;
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const [terminalId] = useState(() => `terminal-${Date.now()}`);
   const [isConnected, setIsConnected] = useState(false);
-  const [cwd, setCwd] = useState(() => localStorage.getItem(STORAGE_KEY) || '');
-  const [showConfig, setShowConfig] = useState(() => !localStorage.getItem(STORAGE_KEY));
+  const [cwd, setCwd] = useState(() => api.storage.get<string>('cwd') || '');
+  const [showConfig, setShowConfig] = useState(() => !api.storage.get<string>('cwd'));
 
   const spawnTerminal = useCallback(async (directory: string) => {
     if (!xtermRef.current || !fitAddonRef.current) return;
@@ -31,8 +29,8 @@ export const TerminalView: React.FC<PluginViewProps> = ({ onToast }) => {
       await invoke('terminal_spawn', {
         id: terminalId,
         cwd: directory || undefined,
-        cols,
-        rows,
+        cols: cols,
+        rows: rows,
       });
 
       setIsConnected(true);
@@ -44,9 +42,9 @@ export const TerminalView: React.FC<PluginViewProps> = ({ onToast }) => {
 
     } catch (error) {
       console.error('Failed to spawn terminal:', error);
-      onToast(`Failed to start terminal: ${error}`);
+      api.ui.toast(`Failed to start terminal: ${error}`);
     }
-  }, [terminalId, onToast]);
+  }, [terminalId, api.ui, invoke]);
 
   useEffect(() => {
     if (!terminalRef.current || showConfig) return;
@@ -115,12 +113,12 @@ export const TerminalView: React.FC<PluginViewProps> = ({ onToast }) => {
     resizeObserver.observe(terminalRef.current);
 
     // Listen for terminal output
-    let unlistenOutput: UnlistenFn | null = null;
-    let unlistenExit: UnlistenFn | null = null;
+    let unlistenOutput: (() => void) | null = null;
+    let unlistenExit: (() => void) | null = null;
 
     (async () => {
-      unlistenOutput = await listen<string>(`terminal-output-${terminalId}`, (event) => {
-        term.write(event.payload);
+      unlistenOutput = await listen<string>(`terminal-output-${terminalId}`, (payload) => {
+        term.write(payload);
       });
 
       unlistenExit = await listen(`terminal-exit-${terminalId}`, () => {
@@ -143,7 +141,7 @@ export const TerminalView: React.FC<PluginViewProps> = ({ onToast }) => {
   }, [terminalId, showConfig, cwd, spawnTerminal, isConnected]);
 
   const handleSaveConfig = () => {
-    localStorage.setItem(STORAGE_KEY, cwd);
+    api.storage.set('cwd', cwd);
     setShowConfig(false);
   };
 

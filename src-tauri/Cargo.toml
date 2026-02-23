@@ -32,12 +32,14 @@ tauri-plugin-shell = "2"
 # Audio engine
 rodio = { version = "0.19", default-features = false, features = ["symphonia-all"] }
 symphonia = { version = "0.5", features = ["all"] }
-tokio = { version = "1", features = ["rt-multi-thread", "sync", "time"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "process"] }
 parking_lot = "0.12"
 crossbeam-channel = "0.5"
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 bytes = "1.5"
 thiserror = "1.0"
+
+dirs = "6"
 
 # Downloader plugin (optional)
 id3 = { version = "1.14", optional = true }

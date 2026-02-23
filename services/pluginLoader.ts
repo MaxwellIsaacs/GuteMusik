@@ -1,7 +1,8 @@
-import { PluginDefinition, PluginViewProps } from '../types';
+import { PluginDefinition, PluginViewProps, PluginHostAPI } from '../types';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { usePluginAPI } from '../context/PluginContext';
 
 // Storage keys
 const INSTALLED_PLUGINS_KEY = 'gutemusik:installed-plugins';
@@ -33,6 +34,9 @@ declare global {
       // Plugin registration
       registerPlugin: (plugin: PluginDefinition) => void;
 
+      // Plugin API hook — use inside plugin views wrapped in <PluginProvider>
+      usePluginAPI: () => PluginHostAPI;
+
       // React and hooks
       React: typeof React;
       useState: typeof useState;
@@ -59,6 +63,9 @@ export function initPluginAPI() {
       console.log(`[Plugins] Registered: ${plugin.id}`);
       dynamicPlugins.set(plugin.id, plugin);
     },
+
+    // Plugin API hook — the clean way for plugins to access app state
+    usePluginAPI,
 
     // React and hooks - plugins use these instead of importing
     React,

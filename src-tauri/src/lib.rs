@@ -70,6 +70,12 @@ pub fn run() {
             #[cfg(feature = "plugins")]
             plugins::downloader::downloader_trigger_scan,
             #[cfg(feature = "plugins")]
+            plugins::downloader::downloader_get_music_dir,
+            #[cfg(feature = "plugins")]
+            plugins::downloader::downloader_set_music_dir,
+            #[cfg(feature = "plugins")]
+            plugins::downloader::downloader_retry_album,
+            #[cfg(feature = "plugins")]
             plugins::terminal::terminal_spawn,
             #[cfg(feature = "plugins")]
             plugins::terminal::terminal_write,

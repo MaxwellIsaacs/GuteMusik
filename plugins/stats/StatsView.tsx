@@ -1,7 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { PluginViewProps } from '../../types';
-import { useServer } from '../../context/ServerContext';
-import { useAudio } from '../../context/AudioContext';
+import { usePluginAPI } from '../../context/PluginContext';
 
 // ─── Helpers ──────────────────────────────────────────────────
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -17,42 +15,22 @@ function describeArc(cx: number, cy: number, r: number, startAngle: number, endA
 }
 
 const PALETTE = [
-  '#a78bfa', // violet-400
-  '#818cf8', // indigo-400
-  '#6366f1', // indigo-500
-  '#c084fc', // purple-400
-  '#e879f9', // fuchsia-400
-  '#f472b6', // pink-400
-  '#fb923c', // orange-400
-  '#34d399', // emerald-400
-  '#22d3ee', // cyan-400
-  '#facc15', // yellow-400
+  '#a78bfa', '#818cf8', '#6366f1', '#c084fc', '#e879f9',
+  '#f472b6', '#fb923c', '#34d399', '#22d3ee', '#facc15',
 ];
 
 const FORMAT_COLORS: Record<string, string> = {
-  FLAC: '#a78bfa',
-  '320kbps': '#818cf8',
-  '192kbps': '#6366f1',
-  OPUS: '#c084fc',
-  MP3: '#f472b6',
-  AAC: '#22d3ee',
-  OGG: '#34d399',
-  WAV: '#facc15',
+  FLAC: '#a78bfa', '320kbps': '#818cf8', '192kbps': '#6366f1',
+  OPUS: '#c084fc', MP3: '#f472b6', AAC: '#22d3ee', OGG: '#34d399', WAV: '#facc15',
 };
 
 const SIZE_LABELS: Record<string, string> = {
-  xl: 'XL (20+ tracks)',
-  large: 'Large (14-19)',
-  medium: 'Standard (8-13)',
-  small: 'EP / Single (<8)',
+  xl: 'XL (20+ tracks)', large: 'Large (14-19)',
+  medium: 'Standard (8-13)', small: 'EP / Single (<8)',
 };
 
 // ─── Donut Chart ──────────────────────────────────────────────
-interface DonutSegment {
-  label: string;
-  value: number;
-  color: string;
-}
+interface DonutSegment { label: string; value: number; color: string; }
 
 const DonutChart: React.FC<{
   segments: DonutSegment[];
@@ -159,118 +137,38 @@ const HBar: React.FC<{
   );
 };
 
-// ─── Radial Clock (stats.fm listening-clock inspired) ─────────
-const RadialClock: React.FC<{
-  data: number[]; // 24 values, one per hour
-  size?: number;
-}> = ({ data, size = 240 }) => {
-  const cx = size / 2;
-  const cy = size / 2;
-  const maxVal = Math.max(...data, 1);
-  const innerR = size * 0.18;
-  const outerR = size * 0.44;
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* Hour labels */}
-      {[0, 6, 12, 18].map((h) => {
-        const angle = (h / 24) * 360;
-        const labelR = outerR + 16;
-        const pos = polarToCartesian(cx, cy, labelR, angle);
-        const labels: Record<number, string> = { 0: '12a', 6: '6a', 12: '12p', 18: '6p' };
-        return (
-          <text key={h} x={pos.x} y={pos.y} textAnchor="middle" dominantBaseline="central" fill="rgba(255,255,255,0.25)" fontSize="9" fontWeight="500">
-            {labels[h]}
-          </text>
-        );
-      })}
-
-      {/* Inner ring */}
-      <circle cx={cx} cy={cy} r={innerR} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-
-      {/* Bars */}
-      {data.map((val, h) => {
-        const angleDeg = (h / 24) * 360;
-        const barLength = innerR + ((val / maxVal) * (outerR - innerR));
-        const startP = polarToCartesian(cx, cy, innerR + 2, angleDeg);
-        const endP = polarToCartesian(cx, cy, barLength, angleDeg);
-        const intensity = val / maxVal;
-        return (
-          <line
-            key={h}
-            x1={startP.x} y1={startP.y} x2={endP.x} y2={endP.y}
-            stroke={`rgba(167, 139, 250, ${0.2 + intensity * 0.8})`}
-            strokeWidth={Math.max(size * 0.028, 4)}
-            strokeLinecap="round"
-          >
-            <title>{`${h}:00 — ${val} albums`}</title>
-          </line>
-        );
-      })}
-
-      {/* Center label */}
-      <text x={cx} y={cy - 4} textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10" fontWeight="600">
-        HOUR
-      </text>
-      <text x={cx} y={cy + 10} textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8">
-        ACTIVITY
-      </text>
-    </svg>
-  );
-};
-
-// ─── Mini Heatmap Grid ────────────────────────────────────────
-const HeatmapGrid: React.FC<{
-  data: number[][]; // 7 rows (days) x N cols
-  rowLabels: string[];
-  colLabels: string[];
-  color?: string;
-}> = ({ data, rowLabels, colLabels, color = '#a78bfa' }) => {
-  const maxVal = Math.max(...data.flat(), 1);
-  const cellSize = 28;
-  const gap = 3;
-  const labelW = 32;
-  const labelH = 20;
-  const width = labelW + colLabels.length * (cellSize + gap);
-  const height = labelH + data.length * (cellSize + gap);
-
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      {/* Col labels */}
-      {colLabels.map((label, c) => (
-        <text key={c} x={labelW + c * (cellSize + gap) + cellSize / 2} y={12} textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontWeight="500">
-          {label}
-        </text>
-      ))}
-      {/* Rows */}
-      {data.map((row, r) => (
-        <g key={r}>
-          <text x={0} y={labelH + r * (cellSize + gap) + cellSize / 2 + 3} fill="rgba(255,255,255,0.3)" fontSize="9" fontWeight="500">
-            {rowLabels[r]}
-          </text>
-          {row.map((val, c) => {
-            const intensity = val / maxVal;
-            return (
-              <rect
-                key={c}
-                x={labelW + c * (cellSize + gap)}
-                y={labelH + r * (cellSize + gap)}
-                width={cellSize}
-                height={cellSize}
-                rx={6}
-                fill={color}
-                opacity={0.08 + intensity * 0.85}
-                className="cursor-crosshair"
-              >
-                <title>{`${rowLabels[r]} ${colLabels[c]}: ${val}`}</title>
-              </rect>
-            );
-          })}
-        </g>
-      ))}
-    </svg>
-  );
-};
+// ─── Stacked Horizontal Bar ──────────────────────────────────
+const StackedHBar: React.FC<{
+  items: { label: string; total: number; segments: { value: number; color: string; label: string }[] }[];
+}> = ({ items }) => (
+  <div className="space-y-3">
+    {items.map((item, i) => {
+      if (item.total === 0) return null;
+      return (
+        <div key={i} className="group">
+          <div className="flex justify-between items-baseline mb-1">
+            <span className="text-sm font-medium text-white/80">{item.label}</span>
+            <span className="text-xs text-white/40 tabular-nums">{item.total} albums</span>
+          </div>
+          <div className="h-2.5 bg-white/5 rounded-full overflow-hidden flex">
+            {item.segments.map((seg, j) => {
+              if (seg.value === 0) return null;
+              const pct = (seg.value / item.total) * 100;
+              return (
+                <div
+                  key={j}
+                  className="h-full transition-all duration-500 cursor-crosshair"
+                  style={{ width: `${pct}%`, backgroundColor: seg.color }}
+                  title={`${seg.label}: ${seg.value} (${pct.toFixed(0)}%)`}
+                />
+              );
+            })}
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
 
 // ─── Spark Line ───────────────────────────────────────────────
 const SparkLine: React.FC<{
@@ -303,7 +201,7 @@ const SparkLine: React.FC<{
 
 // ─── Circular Score Gauge ─────────────────────────────────────
 const ScoreGauge: React.FC<{
-  score: number; // 0-100
+  score: number;
   label: string;
   size?: number;
   color?: string;
@@ -382,9 +280,10 @@ const tabs: { id: TabId; label: string }[] = [
 // ═══════════════════════════════════════════════════════════════
 //  MAIN STATS VIEW
 // ═══════════════════════════════════════════════════════════════
-export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNavigateToAlbum, onToast }) => {
-  const { state, albums, artists, playlists, starredTracks, starredAlbums, queueTracks } = useServer();
-  const { state: audioState } = useAudio();
+export const StatsView: React.FC = () => {
+  const api = usePluginAPI();
+  const { serverState: state, albums, artists, playlists, starredTracks, starredAlbums, queueTracks } = api.library;
+  const audioState = api.audio.state;
 
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [donutHover, setDonutHover] = useState<number | null>(null);
@@ -405,7 +304,6 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
     return Object.entries(acc).sort((a, b) => b[1] - a[1]);
   }, [albums]);
 
-  // Year distribution
   const yearDistribution = useMemo(() => {
     const acc: Record<string, number> = {};
     albums.forEach((a) => {
@@ -417,7 +315,6 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
       .sort((a, b) => a[0].localeCompare(b[0]));
   }, [albums]);
 
-  // Decade distribution
   const decadeDistribution = useMemo(() => {
     const acc: Record<string, number> = {};
     albums.forEach((a) => {
@@ -429,7 +326,6 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
     return Object.entries(acc).sort((a, b) => a[0].localeCompare(b[0]));
   }, [albums]);
 
-  // Top artists by album count
   const topArtists = useMemo(() => {
     const acc: Record<string, { count: number; id?: string }> = {};
     albums.forEach((a) => {
@@ -441,7 +337,6 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
       .slice(0, 15);
   }, [albums]);
 
-  // Top artists by track count
   const topArtistsByTracks = useMemo(() => {
     const acc: Record<string, { count: number; id?: string }> = {};
     albums.forEach((a) => {
@@ -453,7 +348,6 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
       .slice(0, 15);
   }, [albums]);
 
-  // Genre distribution (from Artist data)
   const genreDistribution = useMemo(() => {
     const acc: Record<string, number> = {};
     artists.forEach((a) => {
@@ -461,30 +355,16 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
       acc[genre] = (acc[genre] || 0) + 1;
     });
     return Object.entries(acc)
+      .filter(([g]) => g !== 'Uncategorized')
       .sort((a, b) => b[1] - a[1])
       .slice(0, 12);
   }, [artists]);
 
-  // Simulated listening clock data (derived from library structure)
-  const clockData = useMemo(() => {
-    // Generate a realistic curve based on library size as seed
-    const seed = albums.length + artists.length;
-    return Array.from({ length: 24 }, (_, h) => {
-      // Heavier in evening, lighter in early morning
-      const base = Math.sin(((h - 6) / 24) * Math.PI * 2) * 0.5 + 0.5;
-      const evening = h >= 18 && h <= 23 ? 0.8 : h >= 8 && h <= 11 ? 0.5 : 0.2;
-      const noise = ((seed * (h + 1) * 7) % 100) / 100;
-      return Math.round((base * 0.3 + evening * 0.5 + noise * 0.2) * Math.min(albums.length, 200));
-    });
-  }, [albums, artists]);
-
-  // Year sparkline values
   const yearSparkValues = useMemo(() => {
     if (yearDistribution.length < 2) return [];
     return yearDistribution.map(([, count]) => count);
   }, [yearDistribution]);
 
-  // Size donut segments
   const sizeDonutSegments = useMemo((): DonutSegment[] => {
     const sizeColors: Record<string, string> = {
       xl: '#f472b6', large: '#c084fc', medium: '#818cf8', small: '#34d399',
@@ -496,7 +376,6 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
     }));
   }, [sizeCounts]);
 
-  // Format donut segments
   const formatDonutSegments = useMemo((): DonutSegment[] => {
     return formatCounts.map(([format, count]) => ({
       label: format,
@@ -505,7 +384,6 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
     }));
   }, [formatCounts]);
 
-  // Library health scores
   const healthScores = useMemo(() => {
     const diversityScore = Math.min(100, Math.round((artists.length / Math.max(albums.length, 1)) * 100));
     const collectionScore = Math.min(100, Math.round(Math.log2(albums.length + 1) * 12));
@@ -521,33 +399,144 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
     return Math.round((diversityScore + collectionScore + curationScore + qualityScore) / 4);
   }, [healthScores]);
 
-  // Simulated day-of-week heatmap
-  const heatmapData = useMemo(() => {
-    const seed = albums.length;
-    const days = 7;
-    const hours = 6; // 4-hour blocks: 0-4, 4-8, 8-12, 12-16, 16-20, 20-24
-    return Array.from({ length: days }, (_, d) =>
-      Array.from({ length: hours }, (_, h) => {
-        const val = ((seed * (d + 1) * (h + 1) * 13) % 100);
-        // Make evenings and weekends heavier
-        const boost = (d >= 5 ? 1.5 : 1) * (h >= 4 ? 1.3 : 0.7);
-        return Math.round(val * boost) % 100;
-      })
-    );
+  // ─── New computed data ──────────────────────────────────────
+
+  // Full artist album counts (not limited to top 15)
+  const artistAlbumCounts = useMemo(() => {
+    const acc: Record<string, number> = {};
+    albums.forEach((a) => { acc[a.artist] = (acc[a.artist] || 0) + 1; });
+    const counts = Object.values(acc);
+    const oneAlbum = counts.filter((c) => c === 1).length;
+    const multiAlbum = counts.filter((c) => c > 1).length;
+    return { oneAlbum, multiAlbum, totalUnique: Object.keys(acc).length };
+  }, [albums]);
+
+  // Format breakdown by decade
+  const formatByDecade = useMemo(() => {
+    const acc: Record<string, Record<string, number>> = {};
+    albums.forEach((a) => {
+      if (a.year) {
+        const decade = `${Math.floor(parseInt(a.year) / 10) * 10}s`;
+        if (!acc[decade]) acc[decade] = {};
+        acc[decade][a.format] = (acc[decade][a.format] || 0) + 1;
+      }
+    });
+    const allFormats = formatCounts.map(([f]) => f);
+    return Object.entries(acc)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([decade, formats]) => ({
+        label: decade,
+        total: Object.values(formats).reduce((s, v) => s + v, 0),
+        segments: allFormats
+          .map((f) => ({ label: f, value: formats[f] || 0, color: FORMAT_COLORS[f] || '#a78bfa' }))
+          .filter((s) => s.value > 0),
+      }));
+  }, [albums, formatCounts]);
+
+  // Track count distribution
+  const trackCountBuckets = useMemo(() => {
+    const buckets: [string, number][] = [
+      ['1-4', 0], ['5-8', 0], ['9-12', 0], ['13-16', 0], ['17-20', 0], ['21+', 0],
+    ];
+    albums.forEach((a) => {
+      const tc = a.trackCount;
+      if (tc <= 4) buckets[0][1]++;
+      else if (tc <= 8) buckets[1][1]++;
+      else if (tc <= 12) buckets[2][1]++;
+      else if (tc <= 16) buckets[3][1]++;
+      else if (tc <= 20) buckets[4][1]++;
+      else buckets[5][1]++;
+    });
+    return buckets;
+  }, [albums]);
+
+  // Median year and year coverage
+  const yearStats = useMemo(() => {
+    const years = albums.filter((a) => a.year).map((a) => parseInt(a.year!)).sort((a, b) => a - b);
+    if (years.length === 0) return { median: 0, span: 0, covered: 0, coveragePct: 0 };
+    const median = years[Math.floor(years.length / 2)];
+    const first = years[0];
+    const last = years[years.length - 1];
+    const span = last - first + 1;
+    const uniqueYears = new Set(years).size;
+    return { median, span, covered: uniqueYears, coveragePct: Math.round((uniqueYears / span) * 100) };
+  }, [albums]);
+
+  // Favorite decade (sorted by count, separate from chronological decadeDistribution)
+  const favoriteDecade = useMemo(() => {
+    if (decadeDistribution.length === 0) return null;
+    return [...decadeDistribution].sort((a, b) => b[1] - a[1])[0];
+  }, [decadeDistribution]);
+
+  // Collection profile traits
+  const collectionTraits = useMemo(() => {
+    const traits: { label: string; value: string; detail: string; pct: number; color: string }[] = [];
+
+    // Format quality
+    const flacCount = formatCounts.find(([f]) => f === 'FLAC')?.[1] || 0;
+    const flacPct = albums.length > 0 ? (flacCount / albums.length) * 100 : 0;
+    traits.push({
+      label: flacPct > 60 ? 'Audiophile' : flacPct > 30 ? 'Quality-conscious' : 'Format-agnostic',
+      value: `${flacPct.toFixed(0)}% lossless`,
+      detail: 'Based on FLAC album percentage',
+      pct: flacPct,
+      color: '#a78bfa',
+    });
+
+    // Artist diversity
+    const diversityRatio = artists.length / Math.max(albums.length, 1);
+    traits.push({
+      label: diversityRatio > 0.7 ? 'Explorer' : diversityRatio > 0.4 ? 'Balanced' : 'Deep diver',
+      value: `${(albums.length / Math.max(artists.length, 1)).toFixed(1)} albums per artist`,
+      detail: 'Artist-to-album concentration',
+      pct: Math.min(diversityRatio * 100, 100),
+      color: '#34d399',
+    });
+
+    // Era preference
+    const eraLabel = yearStats.median > 2015 ? 'Modern ear'
+      : yearStats.median > 2000 ? 'Millennial'
+      : yearStats.median > 1985 ? 'Classic soul'
+      : yearStats.median > 0 ? 'Vintage collector' : 'Unknown';
+    traits.push({
+      label: eraLabel,
+      value: yearStats.median > 0 ? `Median year ${yearStats.median}` : 'No year data',
+      detail: 'Center of your collection timeline',
+      pct: yearStats.median > 0 ? Math.min(((yearStats.median - 1950) / 76) * 100, 100) : 0,
+      color: '#818cf8',
+    });
+
+    // Genre breadth
+    const uniqueGenres = new Set(artists.map((a) => a.genre).filter((g) => g && g !== 'Uncategorized'));
+    const genreCount = uniqueGenres.size;
+    traits.push({
+      label: genreCount > 10 ? 'Omnivore' : genreCount > 5 ? 'Versatile' : genreCount > 0 ? 'Specialist' : 'Uncharted',
+      value: `${genreCount} genres`,
+      detail: 'Unique genre count in your library',
+      pct: Math.min((genreCount / 20) * 100, 100),
+      color: '#f472b6',
+    });
+
+    return traits;
+  }, [albums, artists, formatCounts, yearStats]);
+
+  // Biggest album by track count
+  const biggestAlbum = useMemo(() => {
+    if (albums.length === 0) return null;
+    return albums.reduce((max, a) => a.trackCount > max.trackCount ? a : max, albums[0]);
   }, [albums]);
 
   const handleArtistClick = useCallback((name: string) => {
-    const artist = artists.find((a) => a.name === name) || topArtists.find(([n]) => n === name)?.[1];
-    if (artist && typeof artist === 'object' && 'id' in artist) {
-      onNavigateToArtist(artist.id);
-    } else {
-      // Try to find artist ID from topArtists
-      const entry = topArtists.find(([n]) => n === name);
-      if (entry && entry[1].id) {
-        onNavigateToArtist(entry[1].id);
-      }
+    const artist = artists.find((a) => a.name === name);
+    if (artist) {
+      api.nav.navigateToArtist(artist.id);
+      return;
     }
-  }, [artists, topArtists, onNavigateToArtist]);
+    const entry = topArtists.find(([n]) => n === name);
+    if (entry && entry[1].id) {
+      api.nav.navigateToArtist(entry[1].id);
+    }
+  }, [artists, topArtists, api.nav]);
 
   // ─── Render ───────────────────────────────────────────────
   if (!state.isConnected) {
@@ -599,7 +588,7 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
             <StatCard value={starredTracks.length + starredAlbums.length} label="Favorites" detail={`${starredTracks.length} tracks, ${starredAlbums.length} albums`} />
           </div>
 
-          {/* Format + Size side-by-side donuts */}
+          {/* Format + Size donuts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
               <h3 className="text-[10px] font-bold tracking-[0.2em] text-white/30 uppercase mb-6">Audio Formats</h3>
@@ -662,15 +651,12 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
                   <div className="text-sm text-white/50">{audioState.currentTrack.artist} &mdash; {audioState.currentTrack.album}</div>
                 </div>
                 {audioState.isPlaying && (
-                  <div className="ml-auto flex gap-1 items-end h-5 anim-keep">
+                  <div className="ml-auto flex gap-[3px] items-end h-5">
                     {[0, 1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="w-1 bg-violet-400 rounded-full"
-                        style={{
-                          height: `${12 + Math.sin(Date.now() / 300 + i) * 8}px`,
-                          animation: `pulse 0.${4 + i}s ease-in-out infinite alternate`,
-                        }}
+                        className="w-[3px] h-4 bg-violet-400 rounded-full origin-bottom"
+                        style={{ animation: `eq-bar ${0.3 + i * 0.12}s ease-in-out infinite alternate` }}
                       />
                     ))}
                   </div>
@@ -801,11 +787,7 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
             <StatCard value={starredTracks.length} label="Loved Tracks" />
             <StatCard value={starredAlbums.length} label="Loved Albums" />
             <StatCard
-              value={
-                albums.length > 0
-                  ? `${Math.round((totalTracks / albums.length) * 10) / 10}`
-                  : '0'
-              }
+              value={albums.length > 0 ? `${(totalTracks / albums.length).toFixed(1)}` : '0'}
               label="Avg Tracks/Album"
             />
           </div>
@@ -876,7 +858,7 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
           </Section>
 
           {/* Genre distribution */}
-          {genreDistribution.length > 0 && genreDistribution[0][0] !== 'Uncategorized' && (
+          {genreDistribution.length > 0 && (
             <Section title="Genres">
               <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
                 <div className="flex flex-wrap gap-2">
@@ -896,8 +878,8 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
             </Section>
           )}
 
-          {/* Artist diversity stat */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {/* Artist stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <StatCard value={artists.length} label="Total Artists" />
             <StatCard
               value={`${(albums.length / Math.max(artists.length, 1)).toFixed(1)}`}
@@ -909,6 +891,11 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
               label="Most Prolific"
               detail={topArtists.length > 0 ? topArtists[0][0] : '—'}
             />
+            <StatCard
+              value={artistAlbumCounts.oneAlbum}
+              label="One-Album Artists"
+              detail={`${artistAlbumCounts.multiAlbum} with multiple`}
+            />
           </div>
         </div>
       )}
@@ -916,52 +903,77 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
       {/* ═══ INSIGHTS TAB ═══ */}
       {activeTab === 'insights' && (
         <div className="space-y-12">
-          {/* Listening Clock */}
-          <Section title="Listening Clock">
-            <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-8">
-              <div className="flex flex-col lg:flex-row items-center gap-8">
-                <RadialClock data={clockData} size={260} />
-                <div className="flex-1 space-y-4">
-                  <p className="text-sm text-white/50 leading-relaxed">
-                    A radial view of your library's activity pattern throughout the day.
-                    Longer bars indicate more listening activity during that hour.
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/[0.04] rounded-xl p-4">
-                      <div className="text-lg font-bold">{clockData.indexOf(Math.max(...clockData))}:00</div>
-                      <div className="text-[10px] text-white/35 uppercase tracking-wider">Peak Hour</div>
-                    </div>
-                    <div className="bg-white/[0.04] rounded-xl p-4">
-                      <div className="text-lg font-bold">{clockData.reduce((s, v) => s + v, 0).toLocaleString()}</div>
-                      <div className="text-[10px] text-white/35 uppercase tracking-wider">Total Activity</div>
-                    </div>
+          {/* Collection Profile */}
+          <Section title="Collection Profile">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {collectionTraits.map((trait) => (
+                <div key={trait.label} className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-5">
+                  <div className="text-lg font-bold mb-0.5">{trait.label}</div>
+                  <div className="text-sm text-white/60 mb-3">{trait.value}</div>
+                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-2">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.max(trait.pct, 2)}%`, backgroundColor: trait.color }}
+                    />
                   </div>
+                  <div className="text-[10px] text-white/25">{trait.detail}</div>
+                </div>
+              ))}
+            </div>
+          </Section>
+
+          {/* Format Quality by Era */}
+          {formatByDecade.length > 0 && (
+            <Section title="Format Quality by Era">
+              <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
+                <StackedHBar items={formatByDecade} />
+                <div className="flex flex-wrap gap-3 mt-5 pt-4 border-t border-white/[0.04]">
+                  {formatCounts.map(([format]) => (
+                    <div key={format} className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: FORMAT_COLORS[format] || '#a78bfa' }} />
+                      <span className="text-[10px] text-white/40">{format}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          </Section>
+            </Section>
+          )}
 
-          {/* Activity Heatmap */}
-          <Section title="Weekly Activity Pattern">
-            <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6 overflow-x-auto">
-              <HeatmapGrid
-                data={heatmapData}
-                rowLabels={['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
-                colLabels={['12a-4a', '4a-8a', '8a-12p', '12p-4p', '4p-8p', '8p-12a']}
-              />
-              <div className="flex items-center gap-2 mt-4 ml-8">
-                <span className="text-[10px] text-white/25">Less</span>
-                {[0.1, 0.3, 0.5, 0.7, 0.9].map((opacity) => (
-                  <div key={opacity} className="w-4 h-4 rounded" style={{ backgroundColor: '#a78bfa', opacity }} />
-                ))}
-                <span className="text-[10px] text-white/25">More</span>
+          {/* Track Count Distribution */}
+          <Section title="Track Count Distribution">
+            <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
+              <div className="flex items-end gap-3 h-40">
+                {trackCountBuckets.map(([label, count], i) => {
+                  const max = Math.max(...trackCountBuckets.map(([, c]) => c), 1);
+                  const pct = (count / max) * 100;
+                  return (
+                    <div key={label} className="flex-1 flex flex-col items-center group">
+                      <div className="relative w-full flex items-end justify-center" style={{ height: '120px' }}>
+                        <div
+                          className="w-full max-w-[48px] mx-auto rounded-t-lg transition-all group-hover:opacity-100"
+                          style={{
+                            height: `${Math.max(pct, 3)}%`,
+                            backgroundColor: PALETTE[i % PALETTE.length],
+                            opacity: 0.75,
+                            minHeight: '4px',
+                          }}
+                        />
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white/80 font-bold whitespace-nowrap bg-black/80 px-2 py-0.5 rounded">
+                          {count}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-white/30 mt-2 font-medium">{label}</span>
+                    </div>
+                  );
+                })}
               </div>
+              <div className="text-center text-[10px] text-white/20 mt-3">tracks per album</div>
             </div>
           </Section>
 
-          {/* Fun Facts */}
+          {/* Library Insights */}
           <Section title="Library Insights">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {yearDistribution.length > 0 && (
                 <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
                   <div className="text-2xl font-bold mb-1">{yearDistribution[0][0]} — {yearDistribution[yearDistribution.length - 1][0]}</div>
@@ -989,14 +1001,12 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
                   That's how long it'd take to hear everything once
                 </div>
               </div>
-              {decadeDistribution.length > 0 && (
+              {favoriteDecade && (
                 <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
-                  <div className="text-2xl font-bold mb-1">
-                    {decadeDistribution.sort((a, b) => b[1] - a[1])[0][0]}
-                  </div>
+                  <div className="text-2xl font-bold mb-1">{favoriteDecade[0]}</div>
                   <div className="text-[10px] text-white/35 uppercase tracking-wider mb-3">Favorite Decade</div>
                   <div className="text-xs text-white/40">
-                    {decadeDistribution[0][1]} albums from this era
+                    {favoriteDecade[1]} albums from this era
                   </div>
                 </div>
               )}
@@ -1012,14 +1022,41 @@ export const StatsView: React.FC<PluginViewProps> = ({ onNavigateToArtist, onNav
                 </div>
               </div>
               <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
-                <div className="text-2xl font-bold mb-1">
-                  {topArtists.filter(([, d]) => d.count === 1).length}
-                </div>
+                <div className="text-2xl font-bold mb-1">{artistAlbumCounts.oneAlbum}</div>
                 <div className="text-[10px] text-white/35 uppercase tracking-wider mb-3">One-Album Artists</div>
                 <div className="text-xs text-white/40">
-                  Artists with exactly one album in your library
+                  {artistAlbumCounts.totalUnique > 0
+                    ? `${Math.round((artistAlbumCounts.oneAlbum / artistAlbumCounts.totalUnique) * 100)}% of artists represented once`
+                    : 'No artist data'}
                 </div>
               </div>
+              {yearStats.median > 0 && (
+                <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
+                  <div className="text-2xl font-bold mb-1">{yearStats.median}</div>
+                  <div className="text-[10px] text-white/35 uppercase tracking-wider mb-3">Median Year</div>
+                  <div className="text-xs text-white/40">
+                    The midpoint of your collection's timeline
+                  </div>
+                </div>
+              )}
+              {yearStats.span > 0 && (
+                <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
+                  <div className="text-2xl font-bold mb-1">{yearStats.coveragePct}%</div>
+                  <div className="text-[10px] text-white/35 uppercase tracking-wider mb-3">Year Coverage</div>
+                  <div className="text-xs text-white/40">
+                    {yearStats.covered} of {yearStats.span} years in your range have albums
+                  </div>
+                </div>
+              )}
+              {biggestAlbum && (
+                <div className="bg-white/[0.03] border border-white/[0.05] rounded-2xl p-6">
+                  <div className="text-2xl font-bold mb-1">{biggestAlbum.trackCount} tracks</div>
+                  <div className="text-[10px] text-white/35 uppercase tracking-wider mb-3">Biggest Album</div>
+                  <div className="text-xs text-white/40 truncate">
+                    {biggestAlbum.title} by {biggestAlbum.artist}
+                  </div>
+                </div>
+              )}
             </div>
           </Section>
         </div>

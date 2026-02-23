@@ -103,6 +103,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "crossbeam-channel",
+ "dirs",
  "id3",
  "log",
  "parking_lot",
@@ -4683,6 +4684,7 @@ dependencies = [
  "libc",
  "mio",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
  "windows-sys 0.61.2",
 ]

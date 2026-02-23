@@ -1,7 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { PluginViewProps } from '../../types';
-import { useServer } from '../../context/ServerContext';
+import { usePluginAPI } from '../../context/PluginContext';
 import { DownloadQueue } from './DownloadQueue';
 
 interface MbArtist {
@@ -83,8 +81,18 @@ const LazyImage: React.FC<{ src: string; alt: string; className: string }> = ({ 
   );
 };
 
-export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
-  const { state: serverState, refreshAlbums, refreshArtists } = useServer();
+// ── Inline spinner ────────────────────────────────────────────────────────
+const InlineSpinner: React.FC = () => (
+  <span className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+);
+
+export const DownloaderView: React.FC = () => {
+  const api = usePluginAPI();
+  const { invoke } = api.ipc;
+  const onToast = api.ui.toast;
+  const serverState = api.library.serverState;
+  const refreshAlbums = api.library.refreshAlbums;
+  const refreshArtists = api.library.refreshArtists;
 
   const [activeTab, setActiveTab] = useState<Tab>('search');
 
@@ -93,12 +101,15 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
   const [isSearching, setIsSearching] = useState(false);
   const [artistResults, setArtistResults] = useState<MbArtist[]>([]);
   const [selectedArtist, setSelectedArtist] = useState<MbArtist | null>(null);
+  const [autoSelectedName, setAutoSelectedName] = useState<string | null>(null);
   const [isLoadingDiscography, setIsLoadingDiscography] = useState(false);
   const [discography, setDiscography] = useState<MbAlbum[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [genreOverride, setGenreOverride] = useState('');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [hideCompilations, setHideCompilations] = useState(true);
+  const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
+  const [discographySearch, setDiscographySearch] = useState('');
 
   // ── Manual mode state ──────────────────────────────────────────────────
   const [manualEntries, setManualEntries] = useState<ManualAlbum[]>([
@@ -111,28 +122,35 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
   const [songResults, setSongResults] = useState<YtSearchResult[]>([]);
   const [songEntries, setSongEntries] = useState<SongEntry[]>([]);
   const [songGenre, setSongGenre] = useState('');
+  const [expandedSongId, setExpandedSongId] = useState<string | null>(null);
 
-  // ── Download state (tracks whether we just submitted, for brief button feedback) ──
+  // ── Download state ──
   const [justSubmitted, setJustSubmitted] = useState(false);
 
+  // ── Debounce refs ──
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const songDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+
   // ── Search for artists ─────────────────────────────────────────────────
-  const handleSearch = useCallback(async () => {
-    const query = searchInput.trim();
-    if (!query) return;
+  const handleSearch = useCallback(async (query?: string) => {
+    const q = (query ?? searchInput).trim();
+    if (!q) return;
 
     setIsSearching(true);
     setArtistResults([]);
     setSelectedArtist(null);
+    setAutoSelectedName(null);
     setDiscography([]);
     setSelected(new Set());
 
     try {
-      const results = await invoke<MbArtist[]>('downloader_search_artist', { artist: query });
+      const results = await invoke<MbArtist[]>('downloader_search_artist', { artist: q });
       setArtistResults(results);
-      // Auto-select if only one result or first is exact match
       if (results.length === 1) {
+        setAutoSelectedName(results[0].name);
         handleSelectArtist(results[0]);
-      } else if (results.length > 0 && results[0].name.toLowerCase() === query.toLowerCase()) {
+      } else if (results.length > 0 && results[0].name.toLowerCase() === q.toLowerCase()) {
+        setAutoSelectedName(results[0].name);
         handleSelectArtist(results[0]);
       }
     } catch (e: any) {
@@ -141,6 +159,29 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
       setIsSearching(false);
     }
   }, [searchInput, onToast]);
+
+  // ── Debounced artist search ────────────────────────────────────────────
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+    const q = searchInput.trim();
+    if (!q) {
+      setArtistResults([]);
+      setSelectedArtist(null);
+      setAutoSelectedName(null);
+      setDiscography([]);
+      setSelected(new Set());
+      return;
+    }
+
+    searchDebounceRef.current = setTimeout(() => {
+      handleSearch(q);
+    }, 400);
+
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [searchInput]);
 
   // ── Select artist -> load discography ──────────────────────────────────
   const handleSelectArtist = useCallback(async (artist: MbArtist) => {
@@ -161,32 +202,49 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
 
   // ── Filter discography ─────────────────────────────────────────────────
   const filteredDiscography = discography.filter(a => {
-    // Hide compilations/live/soundtrack if toggle is on
     if (hideCompilations && a.secondary_types.some(t =>
       ['Compilation', 'Live', 'Soundtrack', 'Remix', 'DJ-mix', 'Mixtape/Street', 'Demo', 'Interview', 'Spokenword'].includes(t)
     )) {
-      // Exception: keep "Mixtape/Street" if filter is 'all' (user might want mixtapes)
       if (typeFilter !== 'all' || !a.secondary_types.includes('Mixtape/Street')) {
         return false;
       }
     }
 
-    if (typeFilter === 'all') return true;
-    if (typeFilter === 'album') return a.type === 'Album';
-    if (typeFilter === 'ep') return a.type === 'EP';
-    if (typeFilter === 'single') return a.type === 'Single';
-    if (typeFilter === 'other') return !['Album', 'EP', 'Single'].includes(a.type);
+    if (typeFilter === 'album' && a.type !== 'Album') return false;
+    if (typeFilter === 'ep' && a.type !== 'EP') return false;
+    if (typeFilter === 'single' && a.type !== 'Single') return false;
+    if (typeFilter === 'other' && ['Album', 'EP', 'Single'].includes(a.type)) return false;
+
+    // Text search within discography
+    if (discographySearch.trim()) {
+      const q = discographySearch.trim().toLowerCase();
+      if (!a.title.toLowerCase().includes(q)) return false;
+    }
+
     return true;
   });
 
-  // ── Toggle album selection ─────────────────────────────────────────────
-  const toggleSelect = (id: string) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  // ── Toggle album selection (with shift+click range) ────────────────────
+  const toggleSelect = (id: string, index: number, shiftKey: boolean) => {
+    if (shiftKey && lastClickedIndex !== null) {
+      const start = Math.min(lastClickedIndex, index);
+      const end = Math.max(lastClickedIndex, index);
+      setSelected(prev => {
+        const next = new Set(prev);
+        for (let i = start; i <= end; i++) {
+          next.add(filteredDiscography[i].id);
+        }
+        return next;
+      });
+    } else {
+      setSelected(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+      });
+    }
+    setLastClickedIndex(index);
   };
 
   const selectAll = () => {
@@ -235,15 +293,15 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
   }, [discography, selected, selectedArtist, genreOverride, onToast]);
 
   // ── Search for songs on YouTube ────────────────────────────────────────
-  const handleSearchSongs = useCallback(async () => {
-    const query = songSearchInput.trim();
-    if (!query) return;
+  const handleSearchSongs = useCallback(async (query?: string) => {
+    const q = (query ?? songSearchInput).trim();
+    if (!q) return;
 
     setIsSearchingSongs(true);
     setSongResults([]);
 
     try {
-      const results = await invoke<YtSearchResult[]>('downloader_search_songs', { query });
+      const results = await invoke<YtSearchResult[]>('downloader_search_songs', { query: q });
       setSongResults(results);
     } catch (e: any) {
       onToast(`Song search failed: ${e}`);
@@ -252,31 +310,53 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
     }
   }, [songSearchInput, onToast]);
 
-  // ── Add song to download list ─────────────────────────────────────────
-  const addSongEntry = (result: YtSearchResult) => {
-    // Try to parse artist - title from the YouTube title
-    let artist = '';
-    let title = result.title;
+  // ── Debounced song search ──────────────────────────────────────────────
+  useEffect(() => {
+    if (songDebounceRef.current) clearTimeout(songDebounceRef.current);
 
-    // Common patterns: "Artist - Song", "Artist — Song", "Artist | Song"
+    const q = songSearchInput.trim();
+    if (!q) {
+      setSongResults([]);
+      return;
+    }
+
+    songDebounceRef.current = setTimeout(() => {
+      handleSearchSongs(q);
+    }, 400);
+
+    return () => {
+      if (songDebounceRef.current) clearTimeout(songDebounceRef.current);
+    };
+  }, [songSearchInput]);
+
+  // ── Parse artist/title from YouTube title ─────────────────────────────
+  const parseYtTitle = (raw: string): { artist: string; title: string } => {
+    let artist = '';
+    let title = raw;
+
     const separators = [' - ', ' — ', ' | '];
     for (const sep of separators) {
-      if (result.title.includes(sep)) {
-        const parts = result.title.split(sep);
+      if (raw.includes(sep)) {
+        const parts = raw.split(sep);
         artist = parts[0].trim();
         title = parts.slice(1).join(sep).trim();
         break;
       }
     }
 
-    // Remove common suffixes like "(Official Video)", "[Lyrics]", etc.
     title = title
       .replace(/\s*[\(\[].*?(official|video|audio|lyrics|hd|4k|visualizer|music video).*?[\)\]]\s*/gi, '')
       .replace(/\s*[\(\[].*?[\)\]]\s*$/, '')
       .trim();
 
+    return { artist, title };
+  };
+
+  // ── Add song to download list ─────────────────────────────────────────
+  const addSongEntry = (result: YtSearchResult) => {
+    const { artist, title } = parseYtTitle(result.title);
+
     setSongEntries(prev => {
-      // Don't add duplicates
       if (prev.some(e => e.ytResult.id === result.id)) {
         return prev;
       }
@@ -291,12 +371,10 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
     });
   };
 
-  // ── Remove song from download list ────────────────────────────────────
   const removeSongEntry = (id: string) => {
     setSongEntries(prev => prev.filter(e => e.ytResult.id !== id));
   };
 
-  // ── Update song entry fields ──────────────────────────────────────────
   const updateSongEntry = (id: string, field: keyof Omit<SongEntry, 'ytResult'>, value: string) => {
     setSongEntries(prev => prev.map(e => {
       if (e.ytResult.id === id) {
@@ -409,9 +487,8 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
     return t;
   };
 
-  // ── Type filter counts (respects hideCompilations toggle) ──────────────
+  // ── Type filter counts ──────────────────────────────────────────────────
   const typeCounts = discography.reduce((acc, a) => {
-    // Skip compilations/live/soundtracks if toggle is on (same logic as filter)
     if (hideCompilations && a.secondary_types.some(t =>
       ['Compilation', 'Live', 'Soundtrack', 'Remix', 'DJ-mix', 'Mixtape/Street', 'Demo', 'Interview', 'Spokenword'].includes(t)
     )) {
@@ -422,11 +499,10 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
     return acc;
   }, {} as Record<string, number>);
 
-  // Total visible count for "All" filter
   const totalVisibleCount = Object.values(typeCounts).reduce((sum, n) => sum + n, 0);
 
   return (
-    <div className="pb-32">
+    <div className="pb-48">
       {/* Header */}
       <div className="mb-10">
         <h2 className="text-sm font-bold tracking-[0.2em] text-white/40 uppercase mb-2">Plugin</h2>
@@ -444,7 +520,7 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
             activeTab === 'search' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/70'
           }`}
         >
-          Albums
+          Discography
         </button>
         <button
           onClick={() => setActiveTab('songs')}
@@ -469,29 +545,34 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
         <div className="flex-1 min-w-0">
           {activeTab === 'search' ? (
             <div className="space-y-6">
-              {/* Search bar */}
-              <div className="flex gap-3">
+              {/* Search bar with inline spinner */}
+              <div className="relative">
                 <input
                   type="text"
                   placeholder="Artist name..."
                   value={searchInput}
                   onChange={e => setSearchInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                  className="flex-1 bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-colors"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+                      handleSearch();
+                    }
+                  }}
+                  className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 pr-12 text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-colors"
                 />
-                <button
-                  onClick={handleSearch}
-                  disabled={isSearching || !searchInput.trim()}
-                  className="px-6 py-3 bg-white/10 border border-white/5 rounded-xl text-sm font-semibold hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10 transition-colors"
-                >
-                  {isSearching ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Searching
-                    </span>
-                  ) : 'Search'}
-                </button>
+                {isSearching && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <InlineSpinner />
+                  </div>
+                )}
               </div>
+
+              {/* Auto-selected notice */}
+              {autoSelectedName && selectedArtist && !isLoadingDiscography && discography.length > 0 && (
+                <div className="text-xs text-white/30">
+                  Showing results for: <span className="text-white/50 font-medium">{autoSelectedName}</span>
+                </div>
+              )}
 
               {/* Artist disambiguation (if multiple results and none auto-selected) */}
               {artistResults.length > 1 && !selectedArtist && (
@@ -531,13 +612,18 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => { setSelectedArtist(null); setDiscography([]); setSelected(new Set()); }}
+                        onClick={() => { setSelectedArtist(null); setAutoSelectedName(null); setDiscography([]); setSelected(new Set()); setDiscographySearch(''); }}
                         className="text-xs text-white/30 hover:text-white transition-colors"
                       >
                         &larr; Back
                       </button>
                       <h3 className="text-lg font-bold">{selectedArtist.name}</h3>
-                      <span className="text-xs text-white/30">{discography.length} releases</span>
+                      <span className="text-xs text-white/30">
+                        {discography.length} releases
+                        {selected.size > 0 && (
+                          <> &middot; <span className="text-purple-400">{selected.size} selected</span></>
+                        )}
+                      </span>
                     </div>
                     <button
                       onClick={selectAll}
@@ -549,7 +635,26 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
                     </button>
                   </div>
 
-                  {/* Filters */}
+                  {/* Filter within discography */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Filter releases..."
+                      value={discographySearch}
+                      onChange={e => setDiscographySearch(e.target.value)}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-2.5 pr-8 text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-colors"
+                    />
+                    {discographySearch && (
+                      <button
+                        onClick={() => setDiscographySearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/60 transition-colors text-xs"
+                      >
+                        &times;
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Type filters + options */}
                   <div className="flex items-center gap-3 flex-wrap">
                     <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
                       {(['all', 'album', 'ep', 'single', 'other'] as TypeFilter[]).map(f => {
@@ -593,12 +698,12 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
 
                   {/* Album grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {filteredDiscography.map(album => {
+                    {filteredDiscography.map((album, idx) => {
                       const isSelected = selected.has(album.id);
                       return (
                         <button
                           key={album.id}
-                          onClick={() => toggleSelect(album.id)}
+                          onClick={(e) => toggleSelect(album.id, idx, e.shiftKey)}
                           className={`flex items-center gap-4 p-3 rounded-xl border text-left transition-all ${
                             isSelected
                               ? 'bg-white/10 border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.05)]'
@@ -645,53 +750,39 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
                       No releases match the current filters
                     </div>
                   )}
-
-                  {/* Download button */}
-                  {selected.size > 0 && (
-                    <div className="pt-4">
-                      <button
-                        onClick={handleDownloadSelected}
-                        className="w-full py-4 bg-white text-black rounded-xl font-bold text-sm hover:bg-white/90 transition-all"
-                      >
-                        {`Download ${selected.size} Album${selected.size > 1 ? 's' : ''}`}
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
 
               {/* Empty states */}
               {!isSearching && !isLoadingDiscography && discography.length === 0 && !selectedArtist && artistResults.length === 0 && (
                 <div className="text-center py-16 text-white/20 text-sm">
-                  Search for an artist to browse their discography
+                  Type an artist name to browse their discography
                 </div>
               )}
             </div>
           ) : activeTab === 'songs' ? (
             /* ── Song Search Tab ──────────────────────────────────── */
             <div className="space-y-6">
-              {/* Search bar */}
-              <div className="flex gap-3">
+              {/* Search bar with inline spinner */}
+              <div className="relative">
                 <input
                   type="text"
                   placeholder="Search for a song..."
                   value={songSearchInput}
                   onChange={e => setSongSearchInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleSearchSongs()}
-                  className="flex-1 bg-white/5 border border-white/5 rounded-xl px-5 py-3 text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-colors"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      if (songDebounceRef.current) clearTimeout(songDebounceRef.current);
+                      handleSearchSongs();
+                    }
+                  }}
+                  className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-3 pr-12 text-sm text-white placeholder:text-white/20 focus:outline-none focus:bg-white/10 focus:border-white/20 transition-colors"
                 />
-                <button
-                  onClick={handleSearchSongs}
-                  disabled={isSearchingSongs || !songSearchInput.trim()}
-                  className="px-6 py-3 bg-white/10 border border-white/5 rounded-xl text-sm font-semibold hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10 transition-colors"
-                >
-                  {isSearchingSongs ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Searching
-                    </span>
-                  ) : 'Search'}
-                </button>
+                {isSearchingSongs && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <InlineSpinner />
+                  </div>
+                )}
               </div>
 
               {/* Default genre */}
@@ -712,21 +803,22 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
                   <h3 className="text-xs font-bold tracking-[0.2em] text-white/40 uppercase">
                     Search Results
                   </h3>
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                  <div className="space-y-1.5">
                     {songResults.map(result => {
                       const isAdded = songEntries.some(e => e.ytResult.id === result.id);
+                      const parsed = parseYtTitle(result.title);
                       return (
                         <button
                           key={result.id}
                           onClick={() => !isAdded && addSongEntry(result)}
                           disabled={isAdded}
-                          className={`w-full flex items-center gap-4 p-3 rounded-xl border text-left transition-all ${
+                          className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all group ${
                             isAdded
-                              ? 'bg-white/5 border-purple-500/30 opacity-50'
-                              : 'bg-white/[0.02] border-white/5 hover:bg-white/5'
+                              ? 'bg-white/5 border-purple-500/30 opacity-40'
+                              : 'bg-white/[0.02] border-white/5 hover:bg-white/5 hover:border-white/10'
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-lg bg-white/5 flex-shrink-0 overflow-hidden">
+                          <div className="w-12 h-12 rounded-lg bg-white/5 flex-shrink-0 overflow-hidden">
                             <img
                               src={`https://i.ytimg.com/vi/${result.id}/default.jpg`}
                               alt=""
@@ -735,17 +827,29 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
                             />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium truncate">{result.title}</div>
-                            <div className="text-xs text-white/30 flex items-center gap-2">
-                              <span>{result.channel}</span>
-                              <span className="text-white/20">•</span>
-                              <span>{result.duration}</span>
+                            {/* Parsed title (what will be saved) */}
+                            <div className="text-sm font-medium truncate">
+                              {parsed.title}
                             </div>
+                            {/* Parsed artist + duration */}
+                            <div className="text-xs text-white/30 flex items-center gap-1.5 mt-0.5">
+                              {parsed.artist ? (
+                                <span className="truncate">{parsed.artist}</span>
+                              ) : (
+                                <span className="truncate text-white/20">{result.channel}</span>
+                              )}
+                              <span className="text-white/15 flex-shrink-0">&middot;</span>
+                              <span className="flex-shrink-0">{result.duration}</span>
+                            </div>
+                            {/* Original YouTube title if different */}
+                            {(parsed.artist || parsed.title !== result.title) && (
+                              <div className="text-[10px] text-white/15 truncate mt-0.5">{result.title}</div>
+                            )}
                           </div>
-                          <div className={`px-3 py-1 rounded-lg text-xs font-medium ${
+                          <div className={`px-3 py-1.5 rounded-lg text-xs font-medium flex-shrink-0 transition-colors ${
                             isAdded
                               ? 'bg-purple-500/20 text-purple-300'
-                              : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                              : 'bg-white/5 text-white/30 group-hover:bg-white/10 group-hover:text-white'
                           }`}>
                             {isAdded ? 'Added' : '+ Add'}
                           </div>
@@ -764,20 +868,22 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
                       Download List ({songEntries.length})
                     </h3>
                     <button
-                      onClick={() => setSongEntries([])}
+                      onClick={() => { setSongEntries([]); setExpandedSongId(null); }}
                       className="text-xs text-white/30 hover:text-red-400 transition-colors"
                     >
                       Clear All
                     </button>
                   </div>
-                  <div className="space-y-3">
-                    {songEntries.map(entry => (
-                      <div
-                        key={entry.ytResult.id}
-                        className="bg-white/[0.03] border border-white/5 rounded-2xl p-4 space-y-3"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="space-y-1.5">
+                    {songEntries.map(entry => {
+                      const isExpanded = expandedSongId === entry.ytResult.id;
+                      return (
+                        <div
+                          key={entry.ytResult.id}
+                          className="bg-white/[0.03] border border-white/5 rounded-xl overflow-hidden"
+                        >
+                          {/* Compact row */}
+                          <div className="flex items-center gap-3 p-3">
                             <div className="w-10 h-10 rounded-lg bg-white/5 flex-shrink-0 overflow-hidden">
                               <img
                                 src={`https://i.ytimg.com/vi/${entry.ytResult.id}/default.jpg`}
@@ -785,59 +891,87 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <div className="min-w-0">
-                              <div className="text-xs text-white/30 truncate">{entry.ytResult.title}</div>
-                              <div className="text-[10px] text-white/20">{entry.ytResult.duration}</div>
+                            <button
+                              onClick={() => setExpandedSongId(isExpanded ? null : entry.ytResult.id)}
+                              className="min-w-0 flex-1 text-left"
+                            >
+                              <div className="text-sm font-medium truncate">{entry.title || 'Untitled'}</div>
+                              <div className="text-xs text-white/30 truncate">
+                                {entry.artist || 'Unknown Artist'}
+                                {entry.album && <> &middot; {entry.album}</>}
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => setExpandedSongId(isExpanded ? null : entry.ytResult.id)}
+                              className="text-white/20 hover:text-white/50 transition-colors flex-shrink-0 p-1"
+                            >
+                              <svg
+                                width="14" height="14" viewBox="0 0 14 14" fill="none"
+                                className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                              >
+                                <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => { removeSongEntry(entry.ytResult.id); if (isExpanded) setExpandedSongId(null); }}
+                              className="text-white/15 hover:text-red-400 transition-colors flex-shrink-0 p-1"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                              </svg>
+                            </button>
+                          </div>
+
+                          {/* Expanded edit fields */}
+                          {isExpanded && (
+                            <div className="border-t border-white/5 p-3 space-y-2">
+                              <div className="text-[10px] text-white/15 truncate mb-2">
+                                Source: {entry.ytResult.title} &middot; {entry.ytResult.duration}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Title"
+                                  value={entry.title}
+                                  onChange={e => updateSongEntry(entry.ytResult.id, 'title', e.target.value)}
+                                  className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Artist"
+                                  value={entry.artist}
+                                  onChange={e => updateSongEntry(entry.ytResult.id, 'artist', e.target.value)}
+                                  className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                                />
+                                <input
+                                  type="text"
+                                  placeholder="Album (optional)"
+                                  value={entry.album}
+                                  onChange={e => updateSongEntry(entry.ytResult.id, 'album', e.target.value)}
+                                  className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                                />
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Year"
+                                    value={entry.year}
+                                    onChange={e => updateSongEntry(entry.ytResult.id, 'year', e.target.value)}
+                                    className="flex-1 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Genre"
+                                    value={entry.genre}
+                                    onChange={e => updateSongEntry(entry.ytResult.id, 'genre', e.target.value)}
+                                    className="flex-1 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
+                                  />
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <button
-                            onClick={() => removeSongEntry(entry.ytResult.id)}
-                            className="text-xs text-white/20 hover:text-red-400 transition-colors"
-                          >
-                            Remove
-                          </button>
+                          )}
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            placeholder="Title"
-                            value={entry.title}
-                            onChange={e => updateSongEntry(entry.ytResult.id, 'title', e.target.value)}
-                            className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Artist"
-                            value={entry.artist}
-                            onChange={e => updateSongEntry(entry.ytResult.id, 'artist', e.target.value)}
-                            className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Album (optional)"
-                            value={entry.album}
-                            onChange={e => updateSongEntry(entry.ytResult.id, 'album', e.target.value)}
-                            className="bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
-                          />
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              placeholder="Year"
-                              value={entry.year}
-                              onChange={e => updateSongEntry(entry.ytResult.id, 'year', e.target.value)}
-                              className="flex-1 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Genre"
-                              value={entry.genre}
-                              onChange={e => updateSongEntry(entry.ytResult.id, 'genre', e.target.value)}
-                              className="flex-1 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Download button */}
@@ -855,7 +989,7 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
               {/* Tip */}
               {songEntries.length > 0 && (
                 <div className="text-xs text-white/20 text-center">
-                  Tip: Songs without an album will be saved to a "Singles" folder for the artist.
+                  Click a song in the download list to edit its metadata.
                 </div>
               )}
 
@@ -943,9 +1077,32 @@ export const DownloaderView: React.FC<PluginViewProps> = ({ onToast }) => {
 
         {/* ── Right column: Download Queue ──────────────────────── */}
         <div className="lg:w-80 flex-shrink-0">
-          <DownloadQueue onToast={onToast} onAllComplete={handleAllComplete} />
+          <DownloadQueue onToast={onToast} onAllComplete={handleAllComplete} ipc={api.ipc} />
         </div>
       </div>
+
+      {/* ── Sticky bottom action bar (discography tab) ─────────── */}
+      {activeTab === 'search' && selected.size > 0 && (
+        <div className="sticky bottom-6 z-50 flex justify-center">
+          <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-4 shadow-2xl">
+            <span className="text-sm text-white/60">
+              <span className="text-white font-semibold">{selected.size}</span> album{selected.size > 1 ? 's' : ''} selected
+            </span>
+            <button
+              onClick={() => setSelected(new Set())}
+              className="text-xs text-white/30 hover:text-white transition-colors"
+            >
+              Clear
+            </button>
+            <button
+              onClick={handleDownloadSelected}
+              className="px-6 py-2.5 bg-white text-black rounded-xl font-bold text-sm hover:bg-white/90 transition-all"
+            >
+              Download
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

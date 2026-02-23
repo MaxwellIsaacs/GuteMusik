@@ -45,8 +45,28 @@ body {
   to { opacity: 1; }
 }
 
+@keyframes eq-bar {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-view-enter {
+  animation: view-enter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -55,11 +75,14 @@ body {
 
 /* Background image wash — fades in/out on hover */
 .artist-bg-wash {
-  animation: fade-in 0.4s ease-out forwards;
+  animation: fade-in 0.6s ease-out forwards;
 }
 
 .artist-bg-wash img {
-  filter: grayscale(30%) contrast(1.05) brightness(1.1);
+  filter: grayscale(20%) contrast(1.02) brightness(0.9);
+  object-fit: cover;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 /* Artist row — subtle left-edge reveal on hover */
@@ -100,28 +123,29 @@ body {
 @keyframes preview-enter {
   from {
     opacity: 0;
-    transform: translateY(-50%) translateX(12px);
+    transform: translateY(-50%) scale(0.97);
+    filter: blur(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(-50%) scale(1);
+    filter: blur(0px);
   }
 }
 
 .artist-preview-popup {
-  animation: preview-enter 0.15s ease-out forwards;
+  animation: preview-enter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Frosted glass card — blur shows the artist image through */
+/* Frosted glass card — deep blur, no visible border */
 .artist-preview-card {
-  background: rgba(20, 20, 20, 0.45);
-  -webkit-backdrop-filter: saturate(180%) blur(50px);
-  backdrop-filter: saturate(180%) blur(50px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 10, 0.65);
+  -webkit-backdrop-filter: saturate(160%) blur(80px);
+  backdrop-filter: saturate(160%) blur(80px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.55),
-    0 4px 20px rgba(0, 0, 0, 0.25),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+    0 32px 100px rgba(0, 0, 0, 0.6),
+    0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -150,6 +174,41 @@ body {
 
 .album-card-item {
   transition: transform 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   YEAR DOCK — macOS-style bulge via :has()
+═══════════════════════════════════════════════════════════════ */
+
+.year-dock button {
+  transition: transform 120ms ease-out, color 120ms ease-out;
+  transform-origin: right center;
+}
+
+.year-dock button:hover {
+  transform: scale(1.55) translateX(-10px);
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+/* 1 away */
+.year-dock button:has(+ button:hover),
+.year-dock button:hover + button {
+  transform: scale(1.32) translateX(-6px);
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 2 away */
+.year-dock button:has(+ button + button:hover),
+.year-dock button:hover + button + button {
+  transform: scale(1.15) translateX(-3px);
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 3 away */
+.year-dock button:has(+ button + button + button:hover),
+.year-dock button:hover + button + button + button {
+  transform: scale(1.05) translateX(-1px);
+  color: rgba(255, 255, 255, 0.25) !important;
 }
 
 /* Responsive typography for artist name */

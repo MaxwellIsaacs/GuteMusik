@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { CircleNotch, CloudSlash } from '@phosphor-icons/react';
 import { ChromeIcon } from '../components/ChromeIcon';
 import { useServer } from '../context/ServerContext';
@@ -9,6 +10,8 @@ import { ArtistLink } from '../components/ArtistLink';
 import { categorizeArtists } from '../utils/artistParser';
 import { useArtistInfo } from '../hooks/useArtistInfo';
 import { useAlbumInfo } from '../hooks/useAlbumInfo';
+import { useArtistBackground } from '../hooks/useArtistBackground';
+import { ARTIST_PLACEHOLDER } from '../hooks/useArtistImage';
 import { SourceBadge } from '../components/SourceBadge';
 import { PLACEHOLDER_COVER } from '../utils/placeholders';
 
@@ -35,21 +38,6 @@ const ArtistPreview: React.FC<ArtistPreviewProps> = ({ artistId, artistName, onP
     const [albums, setAlbums] = useState<Album[]>([]);
     const [topTracks, setTopTracks] = useState<Track[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [sidebarWidth, setSidebarWidth] = useState(68);
-
-    // Observe sidebar width changes so popup position stays centered in the content area
-    useEffect(() => {
-        const aside = document.querySelector('aside');
-        if (!aside) return;
-        setSidebarWidth(aside.getBoundingClientRect().width);
-        const observer = new ResizeObserver((entries) => {
-            for (const entry of entries) {
-                setSidebarWidth(entry.contentRect.width);
-            }
-        });
-        observer.observe(aside);
-        return () => observer.disconnect();
-    }, []);
 
     useEffect(() => {
         if (!api || !artistId) return;
@@ -94,15 +82,10 @@ const ArtistPreview: React.FC<ArtistPreviewProps> = ({ artistId, artistName, onP
         return () => { cancelled = true; };
     }, [api, artistId]);
 
-    const previewAlbums = albums.slice(0, 6);
+    const previewAlbums = albums.slice(0, 4);
 
-    // Calculate right position: center popup within the content area (viewport minus sidebar minus padding)
-    // Layout: 16px padding + sidebar + 24px gap + [content area] + 16px padding
-    const contentLeft = 16 + sidebarWidth + 24;
-    const contentRight = 16;
-    const contentWidth = typeof window !== 'undefined' ? window.innerWidth - contentLeft - contentRight : 800;
-    // Place the popup's right edge ~8% from the right of the content area
-    const popupRight = contentRight + contentWidth * 0.08;
+    // Position popup on the right side of the viewport, clear of the artist list
+    const popupRight = 32;
 
     return (
         <div
@@ -115,7 +98,7 @@ const ArtistPreview: React.FC<ArtistPreviewProps> = ({ artistId, artistName, onP
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
         >
-            <div className="artist-preview-card rounded-2xl px-9 py-8 w-[560px] max-h-[75vh] overflow-y-auto no-scrollbar">
+            <div className="artist-preview-card rounded-2xl px-8 py-7 w-[480px] max-h-[70vh] overflow-y-auto no-scrollbar">
                 {/* Header */}
                 <div className="flex items-baseline justify-between mb-6">
                     <h3
@@ -162,9 +145,9 @@ const ArtistPreview: React.FC<ArtistPreviewProps> = ({ artistId, artistName, onP
                         )}
 
                         {/* Right column — Albums */}
-                        <div className={topTracks.length > 0 ? "w-[190px] flex-shrink-0" : "flex-1"}>
+                        <div className={topTracks.length > 0 ? "w-[180px] flex-shrink-0" : "flex-1"}>
                             <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/25 mb-4 block">Albums</span>
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 {previewAlbums.map(album => (
                                     <div
                                         key={album.id}
@@ -174,7 +157,7 @@ const ArtistPreview: React.FC<ArtistPreviewProps> = ({ artistId, artistName, onP
                                         <img
                                             src={album.cover}
                                             alt={album.title}
-                                            className="w-10 h-10 object-cover flex-shrink-0 rounded-md"
+                                            className="w-9 h-9 object-cover flex-shrink-0 rounded"
                                             onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_COVER; }}
                                         />
                                         <div className="flex-1 min-w-0">
@@ -345,6 +328,15 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistId, onSelectArtist
     const { info: artistInfo, source: artistInfoSource, isLoading: isLoadingInfo } = useArtistInfo(artistForInfo?.name);
 
     const categorizedArtists = useMemo(() => categorizeArtists(artists), [artists]);
+
+    // Resolve hovered artist name for high-res background (hook must be top-level)
+    const bgArtistName = useMemo(() => {
+        const bgId = hoveredArtist || previewArtistId;
+        if (!bgId) return undefined;
+        const entry = categorizedArtists.all.find(a => a.id === bgId);
+        return entry?.parseResult.primaryArtist;
+    }, [hoveredArtist, previewArtistId, categorizedArtists]);
+    const { imageUrl: bgImageUrl, isLoading: bgImageLoading } = useArtistBackground(bgArtistName);
 
     const filteredArtists = useMemo(() => {
         switch (artistFilter) {
@@ -744,42 +736,43 @@ export const ArtistView: React.FC<ArtistViewProps> = ({ artistId, onSelectArtist
 
         return (
             <div className="animate-fade-in pb-40 relative">
-                {/* Background artist image wash — subtle, appears on hover */}
-                {bgEntry && (
-                    <div className="artist-bg-wash fixed inset-0 z-0 pointer-events-none">
-                        <ArtistImage
-                            artistName={bgEntry.parseResult.primaryArtist}
-                            className="w-full h-full object-cover"
-                            style={{ objectPosition: 'center 30%' }}
-                            alt=""
-                        />
-                        {/* Darken just enough to keep text readable */}
-                        <div className="absolute inset-0 bg-black/50" />
-                        {/* Bottom fade into page bg */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent" />
-                        {/* Left fade so artist list text is legible */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#050505]/60 via-transparent to-transparent" />
-                    </div>
+                {/* Background wash + preview popup portaled to body to escape overflow/transform containers */}
+                {createPortal(
+                    <>
+                        {bgEntry && bgImageUrl && bgImageUrl !== ARTIST_PLACEHOLDER && (
+                            <div className="artist-bg-wash fixed inset-0 z-0 pointer-events-none">
+                                <img
+                                    src={bgImageUrl}
+                                    className="w-full h-full object-cover"
+                                    style={{ objectPosition: 'center 30%' }}
+                                    alt=""
+                                    decoding="async"
+                                />
+                                <div className="absolute inset-0 bg-black/40" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/30 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#050505]/70 via-[#050505]/20 to-transparent" />
+                            </div>
+                        )}
+                        {previewArtistId && (() => {
+                            const previewEntry = filteredArtists.find(a => a.id === previewArtistId);
+                            if (!previewEntry) return null;
+                            return (
+                                <ArtistPreview
+                                    artistId={previewArtistId}
+                                    artistName={previewEntry.name}
+                                    onPlayAlbum={playAlbumFromPreview}
+                                    onSelectAlbum={(id) => onSelectAlbum?.(id)}
+                                    onPlayTrack={(track, queue) => { onPlayTrack?.(track, queue); onToast(`Playing ${track.title}`); }}
+                                    onContextMenu={handlePreviewContextMenu}
+                                    onNavigate={onSelectArtist}
+                                    onMouseEnter={handlePopupMouseEnter}
+                                    onMouseLeave={handlePopupMouseLeave}
+                                />
+                            );
+                        })()}
+                    </>,
+                    document.body
                 )}
-
-                {/* Hover preview popup */}
-                {previewArtistId && (() => {
-                    const previewEntry = filteredArtists.find(a => a.id === previewArtistId);
-                    if (!previewEntry) return null;
-                    return (
-                        <ArtistPreview
-                            artistId={previewArtistId}
-                            artistName={previewEntry.name}
-                            onPlayAlbum={playAlbumFromPreview}
-                            onSelectAlbum={(id) => onSelectAlbum?.(id)}
-                            onPlayTrack={(track, queue) => { onPlayTrack?.(track, queue); onToast(`Playing ${track.title}`); }}
-                            onContextMenu={handlePreviewContextMenu}
-                            onNavigate={onSelectArtist}
-                            onMouseEnter={handlePopupMouseEnter}
-                            onMouseLeave={handlePopupMouseLeave}
-                        />
-                    );
-                })()}
 
                 <div className="relative z-10">
                     {/* Header */}

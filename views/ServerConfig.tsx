@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { CircleNotch, Warning, ShieldWarning, Trash, Upload, Folder } from '@phosphor-icons/react';
 import { ChromeIcon } from '../components/ChromeIcon';
 import { useServer } from '../context/ServerContext';
@@ -9,6 +10,7 @@ interface ServerConfigProps {
     onConnect: () => void;
     plugins: PluginDefinition[];
     disabledPlugins: string[];
+    builtinPluginIds: string[];
     onTogglePlugin: (id: string) => void;
     onDeletePlugin: (id: string) => void;
     onImportPlugin: (file: File) => void;
@@ -20,6 +22,7 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
     onConnect,
     plugins,
     disabledPlugins,
+    builtinPluginIds,
     onTogglePlugin,
     onDeletePlugin,
     onImportPlugin,
@@ -36,6 +39,40 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const folderInputRef = useRef<HTMLInputElement>(null);
+
+    // Downloads / music directory
+    const [musicDir, setMusicDir] = useState('');
+    const [musicDirInput, setMusicDirInput] = useState('');
+    const [musicDirSaving, setMusicDirSaving] = useState(false);
+    const [musicDirError, setMusicDirError] = useState<string | null>(null);
+    const [musicDirSaved, setMusicDirSaved] = useState(false);
+
+    useEffect(() => {
+        invoke<string>('downloader_get_music_dir').then(dir => {
+            setMusicDir(dir);
+            setMusicDirInput(dir);
+        }).catch(() => {});
+    }, []);
+
+    const handleSaveMusicDir = async () => {
+        const trimmed = musicDirInput.trim();
+        if (!trimmed || trimmed === musicDir) return;
+
+        setMusicDirSaving(true);
+        setMusicDirError(null);
+        setMusicDirSaved(false);
+
+        try {
+            await invoke('downloader_set_music_dir', { path: trimmed });
+            setMusicDir(trimmed);
+            setMusicDirSaved(true);
+            setTimeout(() => setMusicDirSaved(false), 2000);
+        } catch (e: any) {
+            setMusicDirError(String(e));
+        } finally {
+            setMusicDirSaving(false);
+        }
+    };
 
     const isInsecureRemote = serverUrl.startsWith('http://') && !serverUrl.includes('localhost') && !serverUrl.includes('127.0.0.1');
 
@@ -203,6 +240,50 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
                 )}
             </section>
 
+            {/* ── Downloads section ── */}
+            <section className="mb-16">
+                <h2 className="text-sm font-bold tracking-[0.2em] text-white/40 uppercase mb-6">Downloads</h2>
+
+                <div className="space-y-4">
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-white/30 uppercase">Music Directory</label>
+                        <p className="text-xs text-white/20 mb-2">
+                            Where downloaded music is saved. Must be an existing directory.
+                        </p>
+                        <div className="flex gap-3">
+                            <input
+                                type="text"
+                                value={musicDirInput}
+                                onChange={(e) => { setMusicDirInput(e.target.value); setMusicDirError(null); setMusicDirSaved(false); }}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSaveMusicDir()}
+                                placeholder="/path/to/music"
+                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-colors font-mono text-sm"
+                            />
+                            <button
+                                onClick={handleSaveMusicDir}
+                                disabled={musicDirSaving || !musicDirInput.trim() || musicDirInput.trim() === musicDir}
+                                className="px-5 py-3 bg-white/10 border border-white/5 rounded-xl text-sm font-semibold hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10 transition-colors"
+                            >
+                                {musicDirSaving ? (
+                                    <CircleNotch size={14} weight="bold" className="animate-spin" />
+                                ) : musicDirSaved ? (
+                                    <span className="text-emerald-400">Saved</span>
+                                ) : (
+                                    'Save'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {musicDirError && (
+                        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                            <Warning size={16} className="text-red-400 flex-shrink-0" />
+                            <p className="text-red-400 text-sm">{musicDirError}</p>
+                        </div>
+                    )}
+                </div>
+            </section>
+
             {/* ── Plugins section ── */}
             <section>
                 <div className="flex items-center justify-between mb-6">
@@ -306,60 +387,72 @@ export const ServerConfig: React.FC<ServerConfigProps> = ({
                     <div className="space-y-1">
                         {plugins.map((plugin) => {
                             const isEnabled = !disabledPlugins.includes(plugin.id);
+                            const isBuiltin = builtinPluginIds.includes(plugin.id);
                             const isConfirmingDelete = confirmDeleteId === plugin.id;
                             const IconComponent = typeof plugin.icon === 'string' ? null : plugin.icon;
 
                             return (
-                                <div
-                                    key={plugin.id}
-                                    className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-colors ${isEnabled ? 'hover:bg-white/5' : 'opacity-40 hover:bg-white/[0.02]'}`}
-                                >
-                                    {/* Icon */}
-                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
-                                        {typeof plugin.icon === 'string' ? (
-                                            <ChromeIcon name={plugin.icon} size={16} />
-                                        ) : (
-                                            IconComponent && <IconComponent size={16} className="text-white/60" />
-                                        )}
-                                    </div>
-
-                                    {/* Label */}
-                                    <span className="text-sm font-medium text-white flex-1">{plugin.label}</span>
-
-                                    {/* Delete */}
-                                    {isConfirmingDelete ? (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-red-400">Delete?</span>
-                                            <button
-                                                onClick={() => { onDeletePlugin(plugin.id); setConfirmDeleteId(null); }}
-                                                className="text-xs text-red-400 font-bold hover:text-red-300 transition-colors"
-                                            >
-                                                Yes
-                                            </button>
-                                            <button
-                                                onClick={() => setConfirmDeleteId(null)}
-                                                className="text-xs text-white/30 hover:text-white transition-colors"
-                                            >
-                                                No
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => setConfirmDeleteId(plugin.id)}
-                                            className="p-1.5 rounded-lg text-white/0 group-hover:text-white/20 hover:!text-red-400 hover:bg-red-500/10 transition-colors"
-                                        >
-                                            <Trash size={14} />
-                                        </button>
-                                    )}
-
-                                    {/* Toggle */}
-                                    <button
-                                        onClick={() => onTogglePlugin(plugin.id)}
-                                        className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${isEnabled ? 'bg-purple-500' : 'bg-white/10'}`}
+                                <React.Fragment key={plugin.id}>
+                                    <div
+                                        className={`group flex items-center gap-4 px-4 py-3.5 rounded-xl transition-colors ${isEnabled ? 'hover:bg-white/5' : 'opacity-40 hover:bg-white/[0.02]'}`}
                                     >
-                                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isEnabled ? 'left-5' : 'left-1'}`} />
-                                    </button>
-                                </div>
+                                        {/* Icon */}
+                                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                                            {typeof plugin.icon === 'string' ? (
+                                                <ChromeIcon name={plugin.icon} size={16} />
+                                            ) : (
+                                                IconComponent && <IconComponent size={16} className="text-white/60" />
+                                            )}
+                                        </div>
+
+                                        {/* Label */}
+                                        <span className="text-sm font-medium text-white flex-1">{plugin.label}</span>
+
+                                        {/* Delete - only for imported (non-built-in) plugins */}
+                                        {!isBuiltin && (
+                                            isConfirmingDelete ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-red-400">Delete?</span>
+                                                    <button
+                                                        onClick={() => { onDeletePlugin(plugin.id); setConfirmDeleteId(null); }}
+                                                        className="text-xs text-red-400 font-bold hover:text-red-300 transition-colors"
+                                                    >
+                                                        Yes
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setConfirmDeleteId(null)}
+                                                        className="text-xs text-white/30 hover:text-white transition-colors"
+                                                    >
+                                                        No
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setConfirmDeleteId(plugin.id)}
+                                                    className="p-1.5 rounded-lg text-white/0 group-hover:text-white/20 hover:!text-red-400 hover:bg-red-500/10 transition-colors"
+                                                >
+                                                    <Trash size={14} />
+                                                </button>
+                                            )
+                                        )}
+
+                                        {/* Toggle */}
+                                        <button
+                                            onClick={() => onTogglePlugin(plugin.id)}
+                                            className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${isEnabled ? 'bg-purple-500' : 'bg-white/10'}`}
+                                        >
+                                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isEnabled ? 'left-5' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+                                    {/* Plugin settings panel */}
+                                    {isEnabled && plugin.settings && (
+                                        <div className="px-4 pb-4 pt-0 -mt-1 ml-12">
+                                            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                                                <plugin.settings />
+                                            </div>
+                                        </div>
+                                    )}
+                                </React.Fragment>
                             );
                         })}
                     </div>

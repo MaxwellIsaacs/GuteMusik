@@ -1,7 +1,10 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import { PluginViewProps } from '../../types';
-import { useAudio } from '../../context/AudioContext';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { usePluginAPI } from '../../context/PluginContext';
 
 type VisualMode = 'oscilloscope' | 'flowfield' | 'network' | 'tunnel';
 
@@ -18,7 +21,7 @@ const MODES: ModeInfo[] = [
   { id: 'tunnel', name: 'Tunnel', description: 'Geometric wireframe' },
 ];
 
-// Musical audio simulation - groovy, not chaotic
+// Musical audio simulation — punchier transients, wider dynamic range
 function useMusicalAudio(isPlaying: boolean) {
   const [data, setData] = useState({
     bass: 0, mid: 0, high: 0,
@@ -28,12 +31,12 @@ function useMusicalAudio(isPlaying: boolean) {
     kick: false,
     snare: false,
     hihat: false,
-    beatPhase: 0, // 0-1 within current beat
-    barPhase: 0,  // 0-1 within current bar (4 beats)
+    beatPhase: 0,
+    barPhase: 0,
   });
 
   const frameRef = useRef<number>(0);
-  const seedRef = useRef(Math.random() * 1000); // Unique seed per "song"
+  const seedRef = useRef(Math.random() * 1000);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -41,101 +44,93 @@ function useMusicalAudio(isPlaying: boolean) {
       return;
     }
 
-    // New "song" = new seed for unique character
     seedRef.current = Math.random() * 1000;
 
     const animate = () => {
       const time = performance.now() * 0.001;
       const seed = seedRef.current;
 
-      // Song characteristics derived from seed
-      const bpm = 118 + (seed % 20); // 118-138 BPM range
-      const swingAmount = (seed % 100) / 500; // 0-0.2 swing
-      const bassiness = 0.5 + (seed % 50) / 100; // How punchy the bass is
-      const brightness = 0.3 + (seed % 40) / 100; // How bright the highs are
+      const bpm = 118 + (seed % 20);
+      const swingAmount = (seed % 100) / 500;
+      const bassiness = 0.6 + (seed % 50) / 100;
+      const brightness = 0.35 + (seed % 40) / 100;
 
       const beatDuration = 60 / bpm;
       const barDuration = beatDuration * 4;
 
-      // Calculate phase within beat and bar
       const rawBeatPhase = (time % beatDuration) / beatDuration;
       const beatNumber = Math.floor(time / beatDuration) % 4;
       const barPhase = (time % barDuration) / barDuration;
 
-      // Apply swing to off-beats
       let beatPhase = rawBeatPhase;
       if (beatNumber % 2 === 1) {
         beatPhase = rawBeatPhase * (1 - swingAmount);
       }
 
-      // Kick drum - beats 1 and 3 (or every beat for four-on-floor)
+      // Kick — sharper transient
       const fourOnFloor = seed % 100 > 40;
       const kickBeats = fourOnFloor ? [0, 1, 2, 3] : [0, 2];
       const isKickBeat = kickBeats.includes(beatNumber);
-      const kickEnvelope = isKickBeat ? Math.exp(-beatPhase * 6) : 0;
-      const kick = beatPhase < 0.15 && isKickBeat;
+      const kickEnvelope = isKickBeat ? Math.exp(-beatPhase * 10) : 0;
+      const kick = beatPhase < 0.12 && isKickBeat;
 
-      // Snare - beats 2 and 4
+      // Snare — snappier
       const snareBeats = [1, 3];
       const isSnare = snareBeats.includes(beatNumber);
-      const snareEnvelope = isSnare ? Math.exp(-beatPhase * 8) : 0;
-      const snare = beatPhase < 0.1 && isSnare;
+      const snareEnvelope = isSnare ? Math.exp(-beatPhase * 12) : 0;
+      const snare = beatPhase < 0.08 && isSnare;
 
-      // Hi-hat - 8th notes or 16th notes
+      // Hi-hat
       const hihatSpeed = seed % 100 > 60 ? 0.25 : 0.5;
       const hihatPhase = (time % (beatDuration * hihatSpeed)) / (beatDuration * hihatSpeed);
       const hihatEnvelope = Math.exp(-hihatPhase * 12) * brightness;
       const hihat = hihatPhase < 0.1;
 
-      // Bass - follows kick with body
-      const bassBase = kickEnvelope * bassiness;
-      const bassSustain = Math.sin(barPhase * Math.PI * 2) * 0.1 + 0.15;
+      // Bass — more punch
+      const bassBase = kickEnvelope * bassiness * 1.3;
+      const bassSustain = Math.sin(barPhase * Math.PI * 2) * 0.12 + 0.18;
       const bass = Math.max(bassBase, bassSustain);
 
-      // Mid - melodic content, changes per bar with seed influence
+      // Mid
       const melodyPhase = time * (0.5 + (seed % 30) / 60);
-      const midBase = 0.2 + Math.sin(melodyPhase) * 0.15;
-      const midAccent = snareEnvelope * 0.3;
+      const midBase = 0.25 + Math.sin(melodyPhase) * 0.18;
+      const midAccent = snareEnvelope * 0.35;
       const mid = midBase + midAccent;
 
-      // High - hi-hats and air
-      const high = hihatEnvelope * 0.6 + 0.1;
+      // High
+      const high = hihatEnvelope * 0.7 + 0.12;
 
-      // Generate waveform - smooth, musical oscillation
+      // Waveform — richer harmonics
       const waveform = new Float32Array(128);
-      const waveFreq1 = 2 + (seed % 4); // Unique wave shape per song
+      const waveFreq1 = 2 + (seed % 4);
       const waveFreq2 = 4 + (seed % 6);
+      const waveFreq3 = 8 + (seed % 8);
       for (let i = 0; i < 128; i++) {
         const t = i / 128;
-        // Main wave follows bass
-        const mainWave = Math.sin(t * Math.PI * waveFreq1 + time * 3) * bass * 0.6;
-        // Harmonic follows mid
-        const harmonic = Math.sin(t * Math.PI * waveFreq2 + time * 5) * mid * 0.3;
-        // High frequency detail
-        const detail = Math.sin(t * Math.PI * 16 + time * 12) * high * 0.15;
-        waveform[i] = mainWave + harmonic + detail;
+        const mainWave = Math.sin(t * Math.PI * waveFreq1 + time * 3) * bass * 0.7;
+        const harmonic = Math.sin(t * Math.PI * waveFreq2 + time * 5) * mid * 0.35;
+        const detail = Math.sin(t * Math.PI * waveFreq3 + time * 9) * high * 0.2;
+        const subBass = Math.sin(t * Math.PI + time * 1.5) * bass * 0.25;
+        waveform[i] = mainWave + harmonic + detail + subBass;
       }
 
-      // Generate spectrum - frequency distribution unique to song
+      // Spectrum — sharper peaks
       const spectrum = new Float32Array(64);
-      const bassWidth = 8 + (seed % 8); // How wide the bass band is
-      const midPeak = 20 + (seed % 15); // Where the mid peak is
+      const bassWidth = 8 + (seed % 8);
+      const midPeak = 20 + (seed % 15);
       for (let i = 0; i < 64; i++) {
         if (i < bassWidth) {
-          // Bass region
-          spectrum[i] = bass * (1 - i / bassWidth) * 1.2;
+          spectrum[i] = bass * (1 - i / bassWidth) * 1.4;
         } else if (i < 40) {
-          // Mid region with peak
           const distFromPeak = Math.abs(i - midPeak) / 20;
-          spectrum[i] = mid * (1 - distFromPeak * 0.7);
+          spectrum[i] = mid * (1 - distFromPeak * 0.6);
         } else {
-          // High region
-          spectrum[i] = high * (1 - (i - 40) / 30);
+          spectrum[i] = high * (1 - (i - 40) / 28);
         }
         spectrum[i] = Math.max(0, Math.min(1, spectrum[i]));
       }
 
-      const energy = bass * 0.4 + mid * 0.35 + high * 0.25;
+      const energy = bass * 0.45 + mid * 0.35 + high * 0.2;
 
       setData({
         bass: Math.max(0, Math.min(1, bass)),
@@ -144,11 +139,8 @@ function useMusicalAudio(isPlaying: boolean) {
         waveform,
         spectrum,
         energy: Math.max(0, Math.min(1, energy)),
-        kick,
-        snare,
-        hihat,
-        beatPhase,
-        barPhase,
+        kick, snare, hihat,
+        beatPhase, barPhase,
       });
 
       frameRef.current = requestAnimationFrame(animate);
@@ -161,152 +153,187 @@ function useMusicalAudio(isPlaying: boolean) {
   return data;
 }
 
+type AudioData = ReturnType<typeof useMusicalAudio>;
+
 // ============================================================================
-// OSCILLOSCOPE - Smooth 3D Ribbon Waveforms
+// OSCILLOSCOPE — Layered Spectral Ribbons with Bloom
 // ============================================================================
 class OscilloscopeVisualizer {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
-  private lines: THREE.Line[] = [];
-  private history: Float32Array[] = [];
-  private historyLength = 40;
-  private baseHue: number;
+  private composer: EffectComposer;
+  private bands: {
+    lines: THREE.Line[];
+    history: Float32Array[];
+    hue: number;
+    yOffset: number;
+    ampScale: number;
+  }[] = [];
+  private historyLength = 8;
+  private pointCount = 128;
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x080808);
-    this.baseHue = Math.random(); // Unique color per session
+    this.scene.background = new THREE.Color(0x030308);
 
     this.camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, 0.5, 5);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.position.set(0, 1.5, 6);
+    this.camera.lookAt(0, 0, -1);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(this.renderer.domElement);
 
-    // Initialize history with smooth lines
-    for (let i = 0; i < this.historyLength; i++) {
-      this.history.push(new Float32Array(128).fill(0));
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.composer.addPass(new UnrealBloomPass(
+      new THREE.Vector2(container.clientWidth, container.clientHeight), 1.8, 0.7, 0.3
+    ));
+    this.composer.addPass(new OutputPass());
 
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(128 * 3);
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const bandConfigs = [
+      { hue: 0.05, yOffset: -1.0, ampScale: 2.2 }, // Bass — warm orange-red
+      { hue: 0.55, yOffset: 0.0, ampScale: 1.5 },  // Mid — cyan
+      { hue: 0.85, yOffset: 1.0, ampScale: 0.8 },  // High — pink
+    ];
 
-      const material = new THREE.LineBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.8 - (i / this.historyLength) * 0.7,
-      });
+    for (const cfg of bandConfigs) {
+      const band = { lines: [] as THREE.Line[], history: [] as Float32Array[], ...cfg };
 
-      const line = new THREE.Line(geometry, material);
-      this.lines.push(line);
-      this.scene.add(line);
-    }
-  }
+      for (let h = 0; h < this.historyLength; h++) {
+        band.history.push(new Float32Array(this.pointCount).fill(0));
 
-  update(audioData: ReturnType<typeof useMusicalAudio>) {
-    // Shift history smoothly
-    for (let i = this.history.length - 1; i > 0; i--) {
-      this.history[i].set(this.history[i - 1]);
-    }
-    this.history[0].set(audioData.waveform);
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.pointCount * 3), 3));
 
-    const time = performance.now() * 0.001;
+        const material = new THREE.LineBasicMaterial({
+          color: new THREE.Color().setHSL(cfg.hue, 0.9, 0.55),
+          transparent: true,
+          opacity: 0.9 - (h / this.historyLength) * 0.8,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
 
-    // Update line positions
-    for (let h = 0; h < this.history.length; h++) {
-      const line = this.lines[h];
-      const positions = (line.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
-      const waveform = this.history[h];
-
-      const zOffset = h * 0.12;
-      // Gentle breathing motion synced to bar
-      const breathe = Math.sin(audioData.barPhase * Math.PI * 2) * 0.05;
-
-      for (let i = 0; i < 128; i++) {
-        const t = (i / 127) - 0.5;
-        const x = t * 7;
-        // Amplitude scales with bass on kick
-        const ampMod = 1 + (audioData.kick ? audioData.bass * 0.5 : 0);
-        const y = waveform[i] * 1.5 * ampMod + breathe;
-        const z = -zOffset;
-
-        positions[i * 3] = x;
-        positions[i * 3 + 1] = y;
-        positions[i * 3 + 2] = z;
+        const line = new THREE.Line(geometry, material);
+        band.lines.push(line);
+        this.scene.add(line);
       }
 
-      line.geometry.attributes.position.needsUpdate = true;
-
-      // Color: base hue shifts slowly, brightness pulses with beat
-      const hue = (this.baseHue + h * 0.015 + time * 0.02) % 1;
-      const lightness = 0.4 + audioData.energy * 0.2;
-      (line.material as THREE.LineBasicMaterial).color.setHSL(hue, 0.6, lightness);
+      this.bands.push(band);
     }
-
-    // Very gentle camera sway - barely noticeable
-    this.camera.position.x = Math.sin(time * 0.1) * 0.2;
-    this.camera.position.y = 0.5 + Math.sin(time * 0.08) * 0.1;
-    this.camera.lookAt(0, 0, -2);
-
-    this.renderer.render(this.scene, this.camera);
   }
 
-  resize(width: number, height: number) {
-    this.camera.aspect = width / height;
+  update(audioData: AudioData) {
+    const time = performance.now() * 0.001;
+    const amps = [audioData.bass, audioData.mid, audioData.high];
+    const freqMults = [1, 2, 4];
+
+    for (let b = 0; b < this.bands.length; b++) {
+      const band = this.bands[b];
+      const amp = amps[b];
+      const fm = freqMults[b];
+
+      for (let i = band.history.length - 1; i > 0; i--) band.history[i].set(band.history[i - 1]);
+
+      const cur = band.history[0];
+      for (let i = 0; i < this.pointCount; i++) {
+        const t = i / this.pointCount;
+        cur[i] = audioData.waveform[i] * amp * band.ampScale
+          + Math.sin(t * Math.PI * fm * 2 + time * (1 + b * 2)) * amp * 0.3;
+      }
+
+      const kickMult = b === 0 && audioData.kick ? 2.5 : 1.0;
+      const snareMult = b === 1 && audioData.snare ? 1.8 : 1.0;
+      const breathe = Math.sin(audioData.barPhase * Math.PI * 2) * 0.04;
+
+      for (let h = 0; h < band.lines.length; h++) {
+        const line = band.lines[h];
+        const positions = (line.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
+        const wave = band.history[h];
+        const zOff = h * 0.15;
+
+        for (let i = 0; i < this.pointCount; i++) {
+          const t = (i / (this.pointCount - 1)) - 0.5;
+          positions[i * 3] = t * 8;
+          positions[i * 3 + 1] = wave[i] * 1.8 * kickMult * snareMult + band.yOffset + breathe;
+          positions[i * 3 + 2] = -zOff;
+        }
+        line.geometry.attributes.position.needsUpdate = true;
+
+        const lightness = 0.35 + audioData.energy * 0.3 + (h === 0 ? 0.1 : 0);
+        (line.material as THREE.LineBasicMaterial).color.setHSL(band.hue + time * 0.01, 0.85 + audioData.energy * 0.1, lightness);
+      }
+    }
+
+    const ca = time * 0.08;
+    this.camera.position.x = Math.sin(ca) * 0.8;
+    this.camera.position.y = 1.2 + Math.sin(time * 0.06) * 0.3;
+    this.camera.position.z = 5.5 + Math.cos(ca) * 0.5;
+    this.camera.lookAt(0, 0, -1);
+
+    this.composer.render();
+  }
+
+  resize(w: number, h: number) {
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(w, h);
+    this.composer.setSize(w, h);
   }
 
   dispose() {
-    this.lines.forEach(line => {
-      line.geometry.dispose();
-      (line.material as THREE.Material).dispose();
-    });
+    this.bands.forEach(b => b.lines.forEach(l => { l.geometry.dispose(); (l.material as THREE.Material).dispose(); }));
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
 }
 
 // ============================================================================
-// FLOW FIELD - Graceful Particle Trails
+// FLOW FIELD — Particle Aurora with Bloom
 // ============================================================================
 class FlowFieldVisualizer {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+  private composer: EffectComposer;
   private particles: { pos: THREE.Vector3; vel: THREE.Vector3; trail: THREE.Vector3[]; seed: number }[] = [];
   private trailLines: THREE.Line[] = [];
-  private particleCount = 150;
-  private trailLength = 40;
-  private baseHue: number;
+  private headPoints: THREE.Points;
+  private headGeometry: THREE.BufferGeometry;
+  private particleCount = 200;
+  private trailLength = 22;
   private flowSeed: number;
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x050508);
-    this.baseHue = Math.random() * 0.3; // Warm colors: 0-0.3
+    this.scene.background = new THREE.Color(0x030206);
+    this.scene.fog = new THREE.FogExp2(0x030206, 0.05);
     this.flowSeed = Math.random() * 100;
 
     this.camera = new THREE.PerspectiveCamera(65, container.clientWidth / container.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, 0, 6);
+    this.camera.position.set(0, 0, 7);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(this.renderer.domElement);
 
-    // Initialize particles in a curved formation
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.composer.addPass(new UnrealBloomPass(
+      new THREE.Vector2(container.clientWidth, container.clientHeight), 2.0, 0.9, 0.2
+    ));
+    this.composer.addPass(new OutputPass());
+
     for (let i = 0; i < this.particleCount; i++) {
       const angle = (i / this.particleCount) * Math.PI * 2;
-      const radius = 2 + Math.random() * 3;
+      const radius = 1.5 + Math.random() * 4;
       const particle = {
         pos: new THREE.Vector3(
           Math.cos(angle) * radius + (Math.random() - 0.5) * 2,
-          (Math.random() - 0.5) * 4,
+          (Math.random() - 0.5) * 5,
           (Math.random() - 0.5) * 3
         ),
         vel: new THREE.Vector3(0, 0, 0),
@@ -316,71 +343,76 @@ class FlowFieldVisualizer {
       this.particles.push(particle);
 
       const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(this.trailLength * 3);
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.trailLength * 3), 3));
 
       const material = new THREE.LineBasicMaterial({
         color: 0xffcc44,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
       });
 
       const line = new THREE.Line(geometry, material);
       this.trailLines.push(line);
       this.scene.add(line);
     }
+
+    // Bright particle heads
+    this.headGeometry = new THREE.BufferGeometry();
+    const hp = new Float32Array(this.particleCount * 3);
+    const hc = new Float32Array(this.particleCount * 3);
+    this.headGeometry.setAttribute('position', new THREE.BufferAttribute(hp, 3));
+    this.headGeometry.setAttribute('color', new THREE.BufferAttribute(hc, 3));
+
+    this.headPoints = new THREE.Points(this.headGeometry, new THREE.PointsMaterial({
+      size: 0.12,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    }));
+    this.scene.add(this.headPoints);
   }
 
   private flowField(x: number, y: number, z: number, time: number): THREE.Vector3 {
-    // Smooth, predictable flow based on seed
     const s = this.flowSeed;
     const angle = Math.sin(x * 0.3 + s) * Math.PI + Math.cos(y * 0.2 + time * 0.3) * Math.PI * 0.5;
     const lift = Math.sin(y * 0.5 + x * 0.3 + time * 0.2) * 0.3;
-
-    return new THREE.Vector3(
-      Math.cos(angle) * 0.8,
-      lift + Math.sin(time * 0.5 + x) * 0.2,
-      Math.sin(angle) * 0.3
-    );
+    const twist = Math.cos(z * 0.4 + time * 0.15) * 0.2;
+    return new THREE.Vector3(Math.cos(angle) * 0.8 + twist, lift + Math.sin(time * 0.5 + x) * 0.2, Math.sin(angle) * 0.35);
   }
 
-  update(audioData: ReturnType<typeof useMusicalAudio>) {
+  update(audioData: AudioData) {
     const time = performance.now() * 0.001;
-
-    // Speed controlled by energy, but smooth
-    const baseSpeed = 0.015 + audioData.energy * 0.02;
+    const baseSpeed = 0.018 + audioData.energy * 0.025;
+    const headPos = (this.headGeometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
+    const headCol = (this.headGeometry.attributes.color as THREE.BufferAttribute).array as Float32Array;
 
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
       const line = this.trailLines[i];
-
-      // Get flow direction
       const flow = this.flowField(p.pos.x, p.pos.y, p.pos.z, time);
 
-      // Pulse outward on kick
       if (audioData.kick) {
-        const outward = p.pos.clone().normalize().multiplyScalar(0.03 * audioData.bass);
+        const outward = p.pos.clone().normalize().multiplyScalar(0.06 * audioData.bass);
         flow.add(outward);
       }
 
-      // Smooth velocity update
       p.vel.lerp(flow, 0.08);
       p.vel.multiplyScalar(0.96);
-
-      // Apply velocity
       p.pos.add(p.vel.clone().multiplyScalar(baseSpeed));
 
-      // Store trail
       p.trail.unshift(p.pos.clone());
       if (p.trail.length > this.trailLength) p.trail.pop();
 
-      // Wrap around smoothly
-      if (p.pos.x > 6) p.pos.x = -6;
-      if (p.pos.x < -6) p.pos.x = 6;
-      if (p.pos.y > 4) p.pos.y = -4;
-      if (p.pos.y < -4) p.pos.y = 4;
+      if (p.pos.x > 7) p.pos.x = -7;
+      if (p.pos.x < -7) p.pos.x = 7;
+      if (p.pos.y > 5) p.pos.y = -5;
+      if (p.pos.y < -5) p.pos.y = 5;
 
-      // Update trail geometry
       const positions = (line.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
       for (let j = 0; j < this.trailLength; j++) {
         if (j < p.trail.length) {
@@ -392,233 +424,233 @@ class FlowFieldVisualizer {
       line.geometry.attributes.position.needsUpdate = true;
       line.geometry.setDrawRange(0, Math.min(p.trail.length, this.trailLength));
 
-      // Color based on particle seed and audio
-      const hue = (this.baseHue + p.seed * 0.15 + audioData.mid * 0.1) % 1;
-      const sat = 0.7 + audioData.high * 0.2;
-      const light = 0.45 + audioData.energy * 0.15;
+      // Color gradient: warm at bottom, cool at top
+      const heightNorm = (p.pos.y + 5) / 10;
+      const hue = 0.05 + heightNorm * 0.5;
+      const sat = 0.8 + audioData.energy * 0.15;
+      const light = 0.4 + audioData.energy * 0.2;
       (line.material as THREE.LineBasicMaterial).color.setHSL(hue, sat, light);
-      (line.material as THREE.LineBasicMaterial).opacity = 0.3 + audioData.energy * 0.3;
+      (line.material as THREE.LineBasicMaterial).opacity = 0.3 + audioData.energy * 0.4;
+
+      headPos[i * 3] = p.pos.x;
+      headPos[i * 3 + 1] = p.pos.y;
+      headPos[i * 3 + 2] = p.pos.z;
+
+      const c = new THREE.Color().setHSL(hue, sat, Math.min(1, light + 0.2));
+      headCol[i * 3] = c.r;
+      headCol[i * 3 + 1] = c.g;
+      headCol[i * 3 + 2] = c.b;
     }
 
-    // Static camera - let the particles do the dancing
-    this.renderer.render(this.scene, this.camera);
+    this.headGeometry.attributes.position.needsUpdate = true;
+    this.headGeometry.attributes.color.needsUpdate = true;
+    (this.headPoints.material as THREE.PointsMaterial).size = 0.1 + audioData.energy * 0.08;
+
+    this.composer.render();
   }
 
-  resize(width: number, height: number) {
-    this.camera.aspect = width / height;
+  resize(w: number, h: number) {
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(w, h);
+    this.composer.setSize(w, h);
   }
 
   dispose() {
-    this.trailLines.forEach(line => {
-      line.geometry.dispose();
-      (line.material as THREE.Material).dispose();
-    });
+    this.trailLines.forEach(l => { l.geometry.dispose(); (l.material as THREE.Material).dispose(); });
+    this.headGeometry.dispose();
+    (this.headPoints.material as THREE.Material).dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
 }
 
 // ============================================================================
-// NETWORK - Breathing Constellation
+// NETWORK — Neural Cosmos with Bloom
 // ============================================================================
 class NetworkVisualizer {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
-  private nodes: { pos: THREE.Vector3; basePos: THREE.Vector3; mesh: THREE.Mesh; seed: number }[] = [];
+  private composer: EffectComposer;
+  private nodes: { pos: THREE.Vector3; basePos: THREE.Vector3; mesh: THREE.Mesh; seed: number; isHub: boolean; freqIndex: number }[] = [];
   private connections: THREE.Line[] = [];
-  private nodeCount = 60;
+  private nodeCount = 70;
   private baseHue: number;
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x08080a);
-    this.baseHue = 0.9 + Math.random() * 0.2; // Pink/magenta range
+    this.scene.background = new THREE.Color(0x040308);
+    this.baseHue = 0.7 + Math.random() * 0.2;
 
     this.camera = new THREE.PerspectiveCamera(55, container.clientWidth / container.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, 0, 10);
+    this.camera.position.set(0, 0, 11);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(this.renderer.domElement);
 
-    // Create nodes in organic clusters
-    const geometry = new THREE.SphereGeometry(0.08, 12, 12);
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.composer.addPass(new UnrealBloomPass(
+      new THREE.Vector2(container.clientWidth, container.clientHeight), 1.6, 0.6, 0.3
+    ));
+    this.composer.addPass(new OutputPass());
+
+    const clusterCenters = [
+      new THREE.Vector3(-3, 2, 0),
+      new THREE.Vector3(3, 1.5, -1),
+      new THREE.Vector3(-2, -2, 1),
+      new THREE.Vector3(2.5, -1.5, 0),
+      new THREE.Vector3(0, 0, -1),
+    ];
+
+    const hubGeom = new THREE.IcosahedronGeometry(0.12, 2);
+    const nodeGeom = new THREE.IcosahedronGeometry(0.06, 1);
 
     for (let i = 0; i < this.nodeCount; i++) {
-      const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-      const mesh = new THREE.Mesh(geometry, material);
+      const isHub = i < 5;
+      const cluster = isHub ? i : Math.floor(Math.random() * clusterCenters.length);
+      const center = clusterCenters[cluster];
+      const spread = isHub ? 0.3 : 1;
 
-      // Cluster-based positioning
-      const cluster = Math.floor(Math.random() * 4);
-      const clusterCenter = [
-        new THREE.Vector3(-3, 2, 0),
-        new THREE.Vector3(3, 1, -1),
-        new THREE.Vector3(-2, -2, 1),
-        new THREE.Vector3(2, -1, 0),
-      ][cluster];
+      const pos = center.clone().add(new THREE.Vector3(
+        (Math.random() - 0.5) * 4 * spread,
+        (Math.random() - 0.5) * 3 * spread,
+        (Math.random() - 0.5) * 3 * spread,
+      ));
 
-      const pos = clusterCenter.clone().add(
-        new THREE.Vector3(
-          (Math.random() - 0.5) * 4,
-          (Math.random() - 0.5) * 3,
-          (Math.random() - 0.5) * 3
-        )
-      );
-
-      mesh.position.copy(pos);
-
-      this.nodes.push({
-        pos: pos.clone(),
-        basePos: pos.clone(),
-        mesh,
-        seed: Math.random(),
+      const material = new THREE.MeshBasicMaterial({
+        color: new THREE.Color().setHSL(this.baseHue, 0.6, isHub ? 0.7 : 0.5),
+        transparent: true,
+        opacity: isHub ? 1.0 : 0.8,
       });
 
+      const mesh = new THREE.Mesh(isHub ? hubGeom : nodeGeom, material);
+      mesh.position.copy(pos);
+
+      this.nodes.push({ pos: pos.clone(), basePos: pos.clone(), mesh, seed: Math.random(), isHub, freqIndex: Math.floor(Math.random() * 40) });
       this.scene.add(mesh);
     }
 
-    // Pre-create connection lines
-    const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.15,
-    });
-
-    for (let i = 0; i < 300; i++) {
-      const lineGeometry = new THREE.BufferGeometry();
-      lineGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
-      const line = new THREE.Line(lineGeometry, lineMaterial.clone());
+    for (let i = 0; i < 400; i++) {
+      const lineGeom = new THREE.BufferGeometry();
+      lineGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+      const line = new THREE.Line(lineGeom, new THREE.LineBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.15,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }));
       line.visible = false;
       this.connections.push(line);
       this.scene.add(line);
     }
   }
 
-  update(audioData: ReturnType<typeof useMusicalAudio>) {
+  update(audioData: AudioData) {
     const time = performance.now() * 0.001;
 
-    // Update nodes - gentle breathing motion
     for (let i = 0; i < this.nodes.length; i++) {
       const node = this.nodes[i];
 
-      // Breathe with the bar
       const breathePhase = audioData.barPhase * Math.PI * 2 + node.seed * Math.PI * 2;
-      const breatheAmount = 0.15 + audioData.energy * 0.1;
-
-      // Calculate breathing offset
+      const breatheAmount = 0.2 + audioData.energy * 0.15;
       const breatheDir = node.basePos.clone().normalize();
-      const breatheOffset = breatheDir.multiplyScalar(Math.sin(breathePhase) * breatheAmount);
+      const breatheOff = breatheDir.multiplyScalar(Math.sin(breathePhase) * breatheAmount);
 
-      // Gentle float
-      const floatY = Math.sin(time * 0.5 + node.seed * 10) * 0.1;
-      const floatX = Math.cos(time * 0.3 + node.seed * 10) * 0.05;
-
-      node.pos.copy(node.basePos).add(breatheOffset);
-      node.pos.y += floatY;
-      node.pos.x += floatX;
-
+      node.pos.copy(node.basePos).add(breatheOff);
+      node.pos.y += Math.sin(time * 0.5 + node.seed * 10) * 0.12;
+      node.pos.x += Math.cos(time * 0.3 + node.seed * 10) * 0.08;
       node.mesh.position.copy(node.pos);
 
-      // Scale pulse on kick
-      const kickPulse = audioData.kick ? 1.5 : 1;
-      const baseScale = 0.8 + node.seed * 0.4;
-      node.mesh.scale.setScalar(baseScale * kickPulse);
+      const freqVal = audioData.spectrum[node.freqIndex] || 0;
+      const kickPulse = audioData.kick ? 1.8 : 1;
+      const freqPulse = 1 + freqVal * 0.8;
+      const baseScale = node.isHub ? 1.5 : 0.8 + node.seed * 0.4;
+      node.mesh.scale.setScalar(baseScale * kickPulse * freqPulse);
 
-      // Color
-      const hue = (this.baseHue + node.seed * 0.1) % 1;
-      const brightness = 0.5 + audioData.spectrum[Math.floor(node.seed * 30)] * 0.4;
-      (node.mesh.material as THREE.MeshBasicMaterial).color.setHSL(hue, 0.5, brightness);
+      const hue = (this.baseHue + node.seed * 0.12) % 1;
+      const brightness = (node.isHub ? 0.55 : 0.35) + freqVal * 0.4 + audioData.energy * 0.15;
+      (node.mesh.material as THREE.MeshBasicMaterial).color.setHSL(hue, 0.65, brightness);
     }
 
-    // Update connections
     let connIdx = 0;
-    const connectionDist = 2.5 + audioData.energy * 1.0;
+    const connectionDist = 2.8 + audioData.energy * 1.5;
 
     for (let i = 0; i < this.nodes.length && connIdx < this.connections.length; i++) {
       for (let j = i + 1; j < this.nodes.length && connIdx < this.connections.length; j++) {
         const dist = this.nodes[i].pos.distanceTo(this.nodes[j].pos);
-
         if (dist < connectionDist) {
           const line = this.connections[connIdx];
           const positions = (line.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
-
-          positions[0] = this.nodes[i].pos.x;
-          positions[1] = this.nodes[i].pos.y;
-          positions[2] = this.nodes[i].pos.z;
-          positions[3] = this.nodes[j].pos.x;
-          positions[4] = this.nodes[j].pos.y;
-          positions[5] = this.nodes[j].pos.z;
-
+          positions[0] = this.nodes[i].pos.x; positions[1] = this.nodes[i].pos.y; positions[2] = this.nodes[i].pos.z;
+          positions[3] = this.nodes[j].pos.x; positions[4] = this.nodes[j].pos.y; positions[5] = this.nodes[j].pos.z;
           line.geometry.attributes.position.needsUpdate = true;
 
-          // Opacity based on distance and audio
-          const opacity = (1 - dist / connectionDist) * 0.25 * (0.5 + audioData.energy * 0.5);
-          (line.material as THREE.LineBasicMaterial).opacity = opacity;
-          (line.material as THREE.LineBasicMaterial).color.setHSL(this.baseHue, 0.4, 0.5);
-
+          (line.material as THREE.LineBasicMaterial).opacity = (1 - dist / connectionDist) * 0.35 * (0.4 + audioData.energy * 0.6);
+          (line.material as THREE.LineBasicMaterial).color.setHSL((this.baseHue + 0.05) % 1, 0.5, 0.5 + audioData.energy * 0.2);
           line.visible = true;
           connIdx++;
         }
       }
     }
 
-    // Hide unused
-    for (let i = connIdx; i < this.connections.length; i++) {
-      this.connections[i].visible = false;
-    }
+    for (let i = connIdx; i < this.connections.length; i++) this.connections[i].visible = false;
 
-    // Very slow camera drift
-    this.camera.position.x = Math.sin(time * 0.05) * 0.5;
-    this.camera.position.y = Math.cos(time * 0.04) * 0.3;
+    const ca = time * 0.04;
+    this.camera.position.x = Math.sin(ca) * 1.0;
+    this.camera.position.y = Math.cos(ca * 0.7) * 0.6;
+    this.camera.position.z = 11;
     this.camera.lookAt(0, 0, 0);
 
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   }
 
-  resize(width: number, height: number) {
-    this.camera.aspect = width / height;
+  resize(w: number, h: number) {
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(w, h);
+    this.composer.setSize(w, h);
   }
 
   dispose() {
-    this.nodes.forEach(n => {
-      n.mesh.geometry.dispose();
-      (n.mesh.material as THREE.Material).dispose();
-    });
-    this.connections.forEach(c => {
-      c.geometry.dispose();
-      (c.material as THREE.Material).dispose();
-    });
+    const geoms = new Set<THREE.BufferGeometry>();
+    this.nodes.forEach(n => { geoms.add(n.mesh.geometry); (n.mesh.material as THREE.Material).dispose(); });
+    geoms.forEach(g => g.dispose());
+    this.connections.forEach(c => { c.geometry.dispose(); (c.material as THREE.Material).dispose(); });
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
 }
 
 // ============================================================================
-// TUNNEL - Rhythmic Geometric Tunnel
+// TUNNEL — Hyperspace Corridor with Bloom + Dust
 // ============================================================================
 class TunnelVisualizer {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+  private composer: EffectComposer;
   private rings: THREE.LineLoop[] = [];
-  private ringCount = 30;
+  private ringCount = 50;
   private longitudinalLines: THREE.Line[] = [];
+  private segments = 8;
   private baseHue: number;
-  private segments: number;
+  private dust: THREE.Points;
+  private dustGeometry: THREE.BufferGeometry;
+  private dustPositions: Float32Array;
+  private dustVelocities: Float32Array;
+  private dustCount = 300;
 
   constructor(container: HTMLElement) {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x050005);
-    this.baseHue = Math.random() * 0.15; // Red/orange range
-    this.segments = 6 + Math.floor(Math.random() * 4); // 6-9 sides
+    this.scene.background = new THREE.Color(0x030002);
+    this.baseHue = Math.random() * 0.15;
 
-    this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(80, container.clientWidth / container.clientHeight, 0.1, 1000);
     this.camera.position.set(0, 0, 3);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -626,98 +658,119 @@ class TunnelVisualizer {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(this.renderer.domElement);
 
-    // Create rings
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.composer.addPass(new UnrealBloomPass(
+      new THREE.Vector2(container.clientWidth, container.clientHeight), 2.2, 0.7, 0.2
+    ));
+    this.composer.addPass(new OutputPass());
+
+    // Rings
     for (let i = 0; i < this.ringCount; i++) {
       const geometry = new THREE.BufferGeometry();
       const positions = new Float32Array((this.segments + 1) * 3);
-
       for (let j = 0; j <= this.segments; j++) {
         const angle = (j / this.segments) * Math.PI * 2;
         positions[j * 3] = Math.cos(angle);
         positions[j * 3 + 1] = Math.sin(angle);
         positions[j * 3 + 2] = 0;
       }
-
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
-      const material = new THREE.LineBasicMaterial({
+      const ring = new THREE.LineLoop(geometry, new THREE.LineBasicMaterial({
         color: 0xff4400,
         transparent: true,
-        opacity: 0.7,
-      });
-
-      const ring = new THREE.LineLoop(geometry, material);
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }));
       ring.position.z = -i * 2;
       this.rings.push(ring);
       this.scene.add(ring);
     }
 
-    // Create longitudinal lines connecting rings
+    // Longitudinal spines
     for (let s = 0; s < this.segments; s++) {
       const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(this.ringCount * 3);
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.ringCount * 3), 3));
 
-      const material = new THREE.LineBasicMaterial({
+      const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({
         color: 0xff4400,
         transparent: true,
-        opacity: 0.3,
-      });
-
-      const line = new THREE.Line(geometry, material);
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }));
       this.longitudinalLines.push(line);
       this.scene.add(line);
     }
+
+    // Speed dust particles
+    this.dustGeometry = new THREE.BufferGeometry();
+    this.dustPositions = new Float32Array(this.dustCount * 3);
+    this.dustVelocities = new Float32Array(this.dustCount);
+    const tunnelEnd = -this.ringCount * 2;
+
+    for (let i = 0; i < this.dustCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 0.5 + Math.random() * 3;
+      this.dustPositions[i * 3] = Math.cos(angle) * radius;
+      this.dustPositions[i * 3 + 1] = Math.sin(angle) * radius;
+      this.dustPositions[i * 3 + 2] = tunnelEnd * Math.random();
+      this.dustVelocities[i] = 0.5 + Math.random() * 0.5;
+    }
+
+    this.dustGeometry.setAttribute('position', new THREE.BufferAttribute(this.dustPositions, 3));
+
+    this.dust = new THREE.Points(this.dustGeometry, new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.04,
+      transparent: true,
+      opacity: 0.4,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    }));
+    this.scene.add(this.dust);
   }
 
-  update(audioData: ReturnType<typeof useMusicalAudio>) {
+  update(audioData: AudioData) {
     const time = performance.now() * 0.001;
+    const tunnelEnd = -this.ringCount * 2;
 
-    // Speed based on energy - but smoother, more like a cruise
-    const speed = 3 + audioData.energy * 4;
+    const baseSpeed = 3 + audioData.energy * 5;
+    const kickBoost = audioData.kick ? audioData.bass * 8 : 0;
+    const speed = baseSpeed + kickBoost;
 
     for (let i = 0; i < this.rings.length; i++) {
       const ring = this.rings[i];
-
-      // Move forward
       ring.position.z += speed * 0.016;
+      if (ring.position.z > 3) ring.position.z = tunnelEnd + 3;
 
-      // Reset at camera
-      if (ring.position.z > 3) {
-        ring.position.z = -this.ringCount * 2 + 3;
-      }
+      const depth = (ring.position.z - tunnelEnd) / (-tunnelEnd + 3);
 
-      // Calculate depth
-      const depth = (ring.position.z + this.ringCount * 2) / (this.ringCount * 2);
-
-      // Scale: grows as it approaches, PULSES on kick
-      const baseScale = 0.5 + depth * 3;
-      const kickPulse = audioData.kick ? 1 + audioData.bass * 0.4 : 1;
+      const baseScale = 0.5 + depth * 3.5;
+      const kickPulse = audioData.kick ? 1 + audioData.bass * 0.5 : 1;
       ring.scale.setScalar(baseScale * kickPulse);
+      ring.rotation.z = audioData.barPhase * Math.PI * 0.3 + i * 0.04;
 
-      // Gentle rotation - synced to bar for consistency
-      ring.rotation.z = audioData.barPhase * Math.PI * 0.25 + i * 0.05;
-
-      // Color: hue shifts with depth, brightness with audio
-      const hue = (this.baseHue + depth * 0.1 + audioData.beatPhase * 0.05) % 1;
-      const lightness = 0.4 + audioData.energy * 0.2 + depth * 0.1;
+      const hue = (this.baseHue + depth * 0.15 + audioData.beatPhase * 0.03) % 1;
+      const lightness = 0.3 + audioData.energy * 0.3 + depth * 0.15;
       (ring.material as THREE.LineBasicMaterial).color.setHSL(hue, 0.9, lightness);
-      (ring.material as THREE.LineBasicMaterial).opacity = 0.3 + depth * 0.4;
+      (ring.material as THREE.LineBasicMaterial).opacity = 0.2 + depth * 0.5;
 
-      // Deform ring vertices with spectrum
       const positions = (ring.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
       for (let j = 0; j <= this.segments; j++) {
         const angle = (j / this.segments) * Math.PI * 2;
         const specIdx = j % audioData.spectrum.length;
-        const deform = audioData.spectrum[specIdx] * 0.2;
-        const radius = 1 + deform;
-        positions[j * 3] = Math.cos(angle) * radius;
-        positions[j * 3 + 1] = Math.sin(angle) * radius;
+        const deform = audioData.spectrum[specIdx] * 0.3;
+        positions[j * 3] = Math.cos(angle) * (1 + deform);
+        positions[j * 3 + 1] = Math.sin(angle) * (1 + deform);
       }
       ring.geometry.attributes.position.needsUpdate = true;
     }
 
-    // Update longitudinal lines
+    // Longitudinal spines
     for (let s = 0; s < this.segments; s++) {
       const line = this.longitudinalLines[s];
       const positions = (line.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
@@ -727,42 +780,49 @@ class TunnelVisualizer {
         const ring = this.rings[i];
         const scale = ring.scale.x;
         const angle = baseAngle + ring.rotation.z;
-
-        // Get ring's current deformation
         const specIdx = s % audioData.spectrum.length;
-        const deform = audioData.spectrum[specIdx] * 0.2;
+        const deform = audioData.spectrum[specIdx] * 0.3;
         const radius = (1 + deform) * scale;
 
         positions[i * 3] = Math.cos(angle) * radius;
         positions[i * 3 + 1] = Math.sin(angle) * radius;
         positions[i * 3 + 2] = ring.position.z;
       }
-
       line.geometry.attributes.position.needsUpdate = true;
 
       const hue = (this.baseHue + s / this.segments * 0.1) % 1;
-      (line.material as THREE.LineBasicMaterial).color.setHSL(hue, 0.8, 0.4);
+      (line.material as THREE.LineBasicMaterial).color.setHSL(hue, 0.85, 0.4 + audioData.energy * 0.15);
     }
 
-    // No camera shake - stability is key
-    this.renderer.render(this.scene, this.camera);
+    // Dust
+    for (let i = 0; i < this.dustCount; i++) {
+      this.dustPositions[i * 3 + 2] += speed * 0.016 * this.dustVelocities[i];
+      if (this.dustPositions[i * 3 + 2] > 3) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 0.5 + Math.random() * 3;
+        this.dustPositions[i * 3] = Math.cos(angle) * radius;
+        this.dustPositions[i * 3 + 1] = Math.sin(angle) * radius;
+        this.dustPositions[i * 3 + 2] = tunnelEnd;
+      }
+    }
+    this.dustGeometry.attributes.position.needsUpdate = true;
+    (this.dust.material as THREE.PointsMaterial).opacity = 0.2 + audioData.energy * 0.3;
+
+    this.composer.render();
   }
 
-  resize(width: number, height: number) {
-    this.camera.aspect = width / height;
+  resize(w: number, h: number) {
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+    this.renderer.setSize(w, h);
+    this.composer.setSize(w, h);
   }
 
   dispose() {
-    this.rings.forEach(r => {
-      r.geometry.dispose();
-      (r.material as THREE.Material).dispose();
-    });
-    this.longitudinalLines.forEach(l => {
-      l.geometry.dispose();
-      (l.material as THREE.Material).dispose();
-    });
+    this.rings.forEach(r => { r.geometry.dispose(); (r.material as THREE.Material).dispose(); });
+    this.longitudinalLines.forEach(l => { l.geometry.dispose(); (l.material as THREE.Material).dispose(); });
+    this.dustGeometry.dispose();
+    (this.dust.material as THREE.Material).dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();
   }
@@ -771,7 +831,8 @@ class TunnelVisualizer {
 // ============================================================================
 // MAIN VIEW COMPONENT
 // ============================================================================
-export const VisualsView: React.FC<PluginViewProps> = ({ onToast }) => {
+export const VisualsView: React.FC = () => {
+  const api = usePluginAPI();
   const containerRef = useRef<HTMLDivElement>(null);
   const visualizerRef = useRef<OscilloscopeVisualizer | FlowFieldVisualizer | NetworkVisualizer | TunnelVisualizer | null>(null);
   const animationRef = useRef<number>(0);
@@ -779,7 +840,7 @@ export const VisualsView: React.FC<PluginViewProps> = ({ onToast }) => {
   const [mode, setMode] = useState<VisualMode>('tunnel');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const { state: audioState } = useAudio();
+  const audioState = api.audio.state;
   const audioData = useMusicalAudio(audioState.isPlaying);
 
   // Initialize visualizer

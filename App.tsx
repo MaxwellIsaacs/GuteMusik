@@ -20,6 +20,15 @@ import { useAudio } from './context/AudioContext';
 import { useServer } from './context/ServerContext';
 import { builtinPlugins } from './plugins';
 import { initPluginAPI, loadInstalledPlugins, importPlugin, importPluginFolder, removePlugin, getDynamicPlugins, getInstalledPlugins } from './services/pluginLoader';
+import { PluginProvider } from './context/PluginContext';
+
+interface NavEntry {
+  view: ViewState;
+  artistId?: string;
+  albumId?: string;
+  playlistId?: string;
+  scrollTop: number;
+}
 
 const DISABLED_PLUGINS_KEY = 'gutemusik:disabled-plugins';
 
@@ -145,7 +154,7 @@ const App = () => {
 
   // State
   const [activeTab, setActiveTab] = useState<ViewState>('Library');
-  const [navHistory, setNavHistory] = useState<ViewState[]>(['Library']);
+  const [navHistory, setNavHistory] = useState<NavEntry[]>([{ view: 'Library', scrollTop: 0 }]);
   const [navIndex, setNavIndex] = useState(0);
   const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -157,8 +166,8 @@ const App = () => {
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | undefined>(undefined);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Track which album to scroll to when returning to Library
-  const [returnToAlbumId, setReturnToAlbumId] = useState<string | undefined>(undefined);
+  // Pending scroll position to restore after back/forward navigation
+  const pendingScrollRef = useRef<number | null>(null);
 
   // Ref for the scrollable view container
   const viewContainerRef = useRef<HTMLDivElement>(null);
@@ -229,49 +238,94 @@ const App = () => {
     setContextMenu({ x: e.clientX, y: e.clientY, item, type });
   }, []);
 
-  const navigate = useCallback((view: ViewState) => {
-    if (view === 'Playlists') setSelectedPlaylistId(undefined);
-
-    // Scroll to top when navigating forward
-    viewContainerRef.current?.scrollTo({ top: 0 });
+  const navigate = useCallback((view: ViewState, context?: { artistId?: string; albumId?: string; playlistId?: string }) => {
+    const currentScroll = viewContainerRef.current?.scrollTop ?? 0;
 
     setActiveTab(currentTab => {
+      // Don't push duplicate entries for static views
       if (currentTab === view && view !== 'Playlists' && view !== 'Artist' && view !== 'Album') {
         return currentTab;
       }
+
       setNavHistory(prev => {
-        const newHistory = prev.slice(0, navIndex + 1);
-        newHistory.push(view);
+        const updated = [...prev];
+        // Save scroll position on the entry we're leaving
+        if (updated[navIndex]) {
+          updated[navIndex] = { ...updated[navIndex], scrollTop: currentScroll };
+        }
+        const newHistory = updated.slice(0, navIndex + 1);
+        newHistory.push({
+          view,
+          artistId: context?.artistId,
+          albumId: context?.albumId,
+          playlistId: context?.playlistId,
+          scrollTop: 0,
+        });
         setNavIndex(newHistory.length - 1);
         return newHistory;
       });
+
+      // Update selected IDs from context
+      if (context) {
+        if ('artistId' in context) setSelectedArtistId(context.artistId);
+        if ('albumId' in context) setSelectedAlbumId(context.albumId);
+        if ('playlistId' in context) setSelectedPlaylistId(context.playlistId);
+      }
+
+      // Scroll to top for the new page
+      viewContainerRef.current?.scrollTo({ top: 0 });
+
       return view;
     });
   }, [navIndex]);
 
   const goBack = useCallback(() => {
     if (navIndex > 0) {
+      const currentScroll = viewContainerRef.current?.scrollTop ?? 0;
       const destination = navHistory[navIndex - 1];
-      const current = navHistory[navIndex];
 
-      // When going back from Album to Library, tell Library which album to scroll to
-      if (current === 'Album' && destination === 'Library') {
-        setReturnToAlbumId(selectedAlbumId);
-      } else {
-        // Scroll to top for all other back navigations
-        viewContainerRef.current?.scrollTo({ top: 0 });
-      }
+      // Save current scroll position before leaving
+      setNavHistory(prev => {
+        const updated = [...prev];
+        if (updated[navIndex]) {
+          updated[navIndex] = { ...updated[navIndex], scrollTop: currentScroll };
+        }
+        return updated;
+      });
 
       setNavIndex(navIndex - 1);
-      setActiveTab(destination);
+      setActiveTab(destination.view);
+      setSelectedArtistId(destination.artistId);
+      setSelectedAlbumId(destination.albumId);
+      setSelectedPlaylistId(destination.playlistId);
+
+      // Schedule scroll restoration after the view renders
+      pendingScrollRef.current = destination.scrollTop;
     }
-  }, [navIndex, navHistory, selectedAlbumId]);
+  }, [navIndex, navHistory]);
 
   const goForward = useCallback(() => {
     if (navIndex < navHistory.length - 1) {
-      viewContainerRef.current?.scrollTo({ top: 0 });
+      const currentScroll = viewContainerRef.current?.scrollTop ?? 0;
+      const destination = navHistory[navIndex + 1];
+
+      // Save current scroll position before leaving
+      setNavHistory(prev => {
+        const updated = [...prev];
+        if (updated[navIndex]) {
+          updated[navIndex] = { ...updated[navIndex], scrollTop: currentScroll };
+        }
+        return updated;
+      });
+
       setNavIndex(navIndex + 1);
-      setActiveTab(navHistory[navIndex + 1]);
+      setActiveTab(destination.view);
+      setSelectedArtistId(destination.artistId);
+      setSelectedAlbumId(destination.albumId);
+      setSelectedPlaylistId(destination.playlistId);
+
+      // Schedule scroll restoration after the view renders
+      pendingScrollRef.current = destination.scrollTop;
     }
   }, [navIndex, navHistory]);
 
@@ -356,14 +410,27 @@ const App = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [togglePlay, nextTrack, previousTrack, toggleMute, setVolume, audioState.volume]);
 
+  // Scroll restoration after back/forward navigation
+  useEffect(() => {
+    if (pendingScrollRef.current !== null) {
+      const scrollTo = pendingScrollRef.current;
+      pendingScrollRef.current = null;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          viewContainerRef.current?.scrollTo({ top: scrollTo });
+        });
+      });
+    }
+  }, [activeTab, selectedArtistId, selectedAlbumId, selectedPlaylistId]);
+
   // Render View Switcher
   const renderView = () => {
     // Show search results when search is active
     if (isSearchActive) {
       return <SearchView
           onPlayTrack={(track, queue) => { playTrack(track, queue); }}
-          onNavigateToAlbum={(id) => { setSearchInput(''); setSelectedAlbumId(id); navigate('Album'); }}
-          onNavigateToArtist={(id) => { setSearchInput(''); setSelectedArtistId(id); navigate('Artist'); }}
+          onNavigateToAlbum={(id) => { setSearchInput(''); navigate('Album', { albumId: id }); }}
+          onNavigateToArtist={(id) => { setSearchInput(''); navigate('Artist', { artistId: id }); }}
           onContextMenu={handleContextMenu}
       />;
     }
@@ -372,20 +439,18 @@ const App = () => {
       case 'Library':
         return <LibraryView
             onPlayAlbum={(id) => { const album = albums.find(a => a.id === id); showToast(`Playing: ${album?.title || 'Album'}`); }}
-            onNavigateToAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
-            onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
+            onNavigateToAlbum={(id) => navigate('Album', { albumId: id })}
+            onNavigateToArtist={(id) => navigate('Artist', { artistId: id })}
             onContextMenu={handleContextMenu}
             onPlayTrack={(track, queue) => { playTrack(track, queue); }}
-            returnToAlbumId={returnToAlbumId}
-            onReturnHandled={() => setReturnToAlbumId(undefined)}
             scrollContainer={viewContainerRef}
         />;
       case 'Playlists':
         return <PlaylistView
             playlistId={selectedPlaylistId}
-            onSelectPlaylist={(id) => setSelectedPlaylistId(id)}
+            onSelectPlaylist={(id) => navigate('Playlists', { playlistId: id })}
             onPlayTrack={(track, queue) => { playTrack(track, queue); }}
-            onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
+            onNavigateToArtist={(id) => navigate('Artist', { artistId: id })}
             onContextMenu={handleContextMenu}
             onToast={showToast}
             onOpenAddMusic={(pl) => setAddMusicPlaylist(pl)}
@@ -394,13 +459,13 @@ const App = () => {
         return <QueueView
             onToast={showToast}
             onContextMenu={handleContextMenu}
-            onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
+            onNavigateToArtist={(id) => navigate('Artist', { artistId: id })}
         />;
       case 'Artist':
         return <ArtistView
             artistId={selectedArtistId}
-            onSelectArtist={(id) => setSelectedArtistId(id)}
-            onSelectAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
+            onSelectArtist={(id) => navigate('Artist', { artistId: id })}
+            onSelectAlbum={(id) => navigate('Album', { albumId: id })}
             onPlayTrack={(track, queue) => { playTrack(track, queue); }}
             onContextMenu={handleContextMenu}
             onToast={showToast}
@@ -409,7 +474,7 @@ const App = () => {
         return <AlbumView
             albumId={selectedAlbumId}
             onPlayTrack={(track, queue) => { playTrack(track, queue); }}
-            onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
+            onNavigateToArtist={(id) => navigate('Artist', { artistId: id })}
             onContextMenu={handleContextMenu}
             onToast={showToast}
         />;
@@ -419,6 +484,7 @@ const App = () => {
             onConnect={() => { showToast("Connected"); navigate('Library'); }}
             plugins={plugins}
             disabledPlugins={disabledPlugins}
+            builtinPluginIds={builtinPlugins.map(p => p.id)}
             onTogglePlugin={handleTogglePlugin}
             onDeletePlugin={handleDeletePlugin}
             onImportPlugin={handleImportPlugin}
@@ -431,16 +497,17 @@ const App = () => {
           const plugin = plugins.find(p => p.id === pluginId);
           if (plugin) {
             const PluginView = plugin.view;
-            return <PluginView
-              onPlayTrack={(track, queue) => { playTrack(track, queue); }}
-              onNavigateToAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
-              onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
-              onContextMenu={handleContextMenu}
-              onToast={showToast}
-              serverState={serverContext.state}
-              refreshAlbums={serverContext.refreshAlbums}
-              refreshArtists={serverContext.refreshArtists}
-            />;
+            return (
+              <PluginProvider
+                pluginId={pluginId}
+                navigateToAlbum={(id) => navigate('Album', { albumId: id })}
+                navigateToArtist={(id) => navigate('Artist', { artistId: id })}
+                toast={showToast}
+                contextMenu={handleContextMenu}
+              >
+                <PluginView />
+              </PluginProvider>
+            );
           }
         }
         return <LibraryView onPlayAlbum={() => {}} onNavigateToAlbum={() => {}} onNavigateToArtist={() => {}} onContextMenu={handleContextMenu} />;
@@ -460,8 +527,7 @@ const App = () => {
           const pl = await createPlaylist(name);
           if (pl) {
             showToast(`Created playlist: ${pl.title}`);
-            setSelectedPlaylistId(pl.id);
-            navigate('Playlists');
+            navigate('Playlists', { playlistId: pl.id });
           } else {
             showToast('Failed to create playlist');
           }
@@ -481,15 +547,15 @@ const App = () => {
         <FullScreenPlayer
             onCollapse={() => setIsPlayerExpanded(false)}
             onToast={showToast}
-            onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); setIsPlayerExpanded(false); }}
+            onNavigateToArtist={(id) => { navigate('Artist', { artistId: id }); setIsPlayerExpanded(false); }}
         />
       )}
 
       {/* Top drag region — spans the full window width for titlebar dragging */}
-      <div data-tauri-drag-region className="absolute top-0 left-0 right-0 h-10 z-[5]" />
+      <div data-tauri-drag-region className="absolute top-0 left-0 right-0 h-6 z-20" />
 
       <div className="relative z-10 flex h-full p-4 gap-6">
-        <Sidebar activeTab={activeTab} onNavigate={(view) => { if (view === 'Artist') setSelectedArtistId(undefined); navigate(view); }} onNewPlaylist={() => setShowWizard(true)} plugins={enabledPlugins} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
+        <Sidebar activeTab={activeTab} onNavigate={(view) => navigate(view, view === 'Artist' ? { artistId: undefined } : view === 'Playlists' ? { playlistId: undefined } : undefined)} onNewPlaylist={() => setShowWizard(true)} plugins={enabledPlugins} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(c => !c)} />
 
         <main className={`flex-1 h-full overflow-hidden relative rounded-3xl border border-white/5 bg-black/40 flex flex-col`}>
           {/* Subtle noise texture — scoped to main content only */}
@@ -528,7 +594,9 @@ const App = () => {
           {/* View Container */}
           <div ref={viewContainerRef} className="flex-1 overflow-y-auto no-scrollbar px-10 pt-4">
             <ErrorBoundary>
-              {renderView()}
+              <div key={`${activeTab}:${selectedPlaylistId ?? ''}:${selectedArtistId ?? ''}:${selectedAlbumId ?? ''}`} className="animate-view-enter">
+                {renderView()}
+              </div>
             </ErrorBoundary>
           </div>
         </main>
@@ -538,8 +606,8 @@ const App = () => {
       <PlayerCapsule
         onToast={showToast}
         onExpand={() => setIsPlayerExpanded(true)}
-        onNavigateToArtist={(id) => { setSelectedArtistId(id); navigate('Artist'); }}
-        onNavigateToAlbum={(id) => { setSelectedAlbumId(id); navigate('Album'); }}
+        onNavigateToArtist={(id) => navigate('Artist', { artistId: id })}
+        onNavigateToAlbum={(id) => navigate('Album', { albumId: id })}
         sidebarWidth={sidebarCollapsed ? 68 : 256}
         className={`transition-[transform,opacity] duration-300 ${isPlayerExpanded ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}
       />

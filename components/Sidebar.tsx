@@ -21,14 +21,14 @@ const NavItem: React.FC<{
   <button
     onClick={(e) => { e.stopPropagation(); onClick(); }}
     title={collapsed ? label : undefined}
-    className={`w-full rounded-xl flex items-center group
+    className={`w-full rounded-xl flex items-center group transition-all duration-200 ease-out
       ${collapsed ? 'py-3 justify-center' : 'px-4 py-3 gap-4'}
       ${active ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' : 'text-white/50 hover:text-white hover:bg-white/5'}
     `}
   >
-    <ChromeIcon name={iconName} size={18} className={`flex-shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
+    <ChromeIcon name={iconName} size={18} className={`flex-shrink-0 transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
     {!collapsed && (
-      <span className={`text-sm font-medium tracking-wide whitespace-nowrap ${active ? 'opacity-100' : 'opacity-80'}`}>
+      <span className={`text-sm font-medium tracking-wide whitespace-nowrap transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-80'}`}>
         {label}
       </span>
     )}
@@ -43,18 +43,18 @@ const PluginNavItem: React.FC<{
     <button
       onClick={(e) => { e.stopPropagation(); onNavigate(`Plugin:${plugin.id}`); }}
       title={collapsed ? plugin.label : undefined}
-      className={`w-full rounded-xl flex items-center group
+      className={`w-full rounded-xl flex items-center group transition-all duration-200 ease-out
         ${collapsed ? 'py-3 justify-center' : 'px-4 py-3 gap-4'}
         ${active ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' : 'text-white/50 hover:text-white hover:bg-white/5'}
       `}
     >
       {typeof plugin.icon === 'string' ? (
-        <ChromeIcon name={plugin.icon} size={18} className={`flex-shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
+        <ChromeIcon name={plugin.icon} size={18} className={`flex-shrink-0 transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
       ) : (
-        IconComponent && <IconComponent size={18} className={`flex-shrink-0 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
+        IconComponent && <IconComponent size={18} className={`flex-shrink-0 transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`} />
       )}
       {!collapsed && (
-        <span className={`text-sm font-medium tracking-wide whitespace-nowrap ${active ? 'opacity-100' : 'opacity-80'}`}>
+        <span className={`text-sm font-medium tracking-wide whitespace-nowrap transition-opacity duration-200 ${active ? 'opacity-100' : 'opacity-80'}`}>
           {plugin.label}
         </span>
       )}
