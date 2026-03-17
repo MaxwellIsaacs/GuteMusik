@@ -34,6 +34,8 @@ erggoed-audio-engine = { path = "../../shared/erggoed-audio-engine" }
 
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "process"] }
 parking_lot = "0.12"
+crossbeam-channel = "0.5"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 thiserror = "1.0"
 
 dirs = "6"
