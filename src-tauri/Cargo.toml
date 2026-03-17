@@ -29,14 +29,11 @@ tauri = { version = "2.10.0", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 
-# Audio engine
-rodio = { version = "0.19", default-features = false, features = ["symphonia-all"] }
-symphonia = { version = "0.5", features = ["all"] }
+# Shared audio engine
+erggoed-audio-engine = { path = "../../shared/erggoed-audio-engine" }
+
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "process"] }
 parking_lot = "0.12"
-crossbeam-channel = "0.5"
-reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
-bytes = "1.5"
 thiserror = "1.0"
 
 dirs = "6"

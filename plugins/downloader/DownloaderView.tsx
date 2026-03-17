@@ -124,6 +124,36 @@ export const DownloaderView: React.FC = () => {
   const [songGenre, setSongGenre] = useState('');
   const [expandedSongId, setExpandedSongId] = useState<string | null>(null);
 
+  // ── Settings state ──
+  const [musicDir, setMusicDir] = useState('');
+  const [musicDirInput, setMusicDirInput] = useState('');
+  const [isSavingDir, setIsSavingDir] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Load music dir on mount
+  useEffect(() => {
+    invoke<string>('downloader_get_music_dir').then(dir => {
+      setMusicDir(dir);
+      setMusicDirInput(dir);
+    }).catch(() => {});
+  }, []);
+
+  const handleSaveMusicDir = useCallback(async () => {
+    const trimmed = musicDirInput.trim();
+    if (!trimmed || trimmed === musicDir) return;
+    setIsSavingDir(true);
+    try {
+      await invoke('downloader_set_music_dir', { path: trimmed });
+      setMusicDir(trimmed);
+      onToast('Download directory updated');
+    } catch (e: any) {
+      onToast(`Failed to set directory: ${e}`);
+      setMusicDirInput(musicDir);
+    } finally {
+      setIsSavingDir(false);
+    }
+  }, [musicDirInput, musicDir, onToast]);
+
   // ── Download state ──
   const [justSubmitted, setJustSubmitted] = useState(false);
 
@@ -510,6 +540,52 @@ export const DownloaderView: React.FC = () => {
         <p className="text-sm text-white/30 mt-2">
           Download albums by artist, individual songs, or enter manually. Auto-tagged with MusicBrainz metadata.
         </p>
+      </div>
+
+      {/* Settings toggle */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowSettings(s => !s)}
+          className="flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={`transition-transform ${showSettings ? 'rotate-90' : ''}`}>
+            <path d="M5.25 3.5L8.75 7L5.25 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="uppercase tracking-widest font-medium">Settings</span>
+          {musicDir && !showSettings && (
+            <span className="text-white/15 font-normal normal-case tracking-normal ml-1 truncate max-w-[300px]">{musicDir}</span>
+          )}
+        </button>
+
+        {showSettings && (
+          <div className="mt-3 bg-white/[0.03] border border-white/5 rounded-xl p-4 space-y-3">
+            <div>
+              <label className="text-xs text-white/40 font-medium uppercase tracking-widest block mb-2">
+                Download Directory
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={musicDirInput}
+                  onChange={e => setMusicDirInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveMusicDir(); }}
+                  placeholder="/home/user/Music"
+                  className="flex-1 bg-white/5 border border-white/5 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/20 transition-colors font-mono"
+                />
+                <button
+                  onClick={handleSaveMusicDir}
+                  disabled={isSavingDir || musicDirInput.trim() === musicDir || !musicDirInput.trim()}
+                  className="px-4 py-2 bg-white/10 text-white/70 rounded-lg text-sm font-medium hover:bg-white/15 disabled:opacity-30 disabled:hover:bg-white/10 transition-all"
+                >
+                  {isSavingDir ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              <p className="text-[11px] text-white/20 mt-1.5">
+                Music is saved as: <span className="text-white/30 font-mono">{'{dir}/{artist}/{album}/01-track.mp3'}</span>
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

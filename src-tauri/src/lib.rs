@@ -1,4 +1,4 @@
-mod audio;
+use erggoed_audio_engine as audio;
 #[cfg(feature = "plugins")]
 mod plugins;
 
@@ -15,7 +15,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             // Initialize audio engine
-            let engine = AudioEngineHandle::new(app.handle().clone())
+            let engine = AudioEngineHandle::new(app.handle().clone(), "lumina-audio")
                 .expect("Failed to initialize audio engine");
             app.manage(engine);
 
