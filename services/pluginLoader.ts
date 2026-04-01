@@ -8,6 +8,8 @@ import { usePluginAPI } from '../context/PluginContext';
 const INSTALLED_PLUGINS_KEY = 'gutemusik:installed-plugins';
 
 // Plugin manifest format (inside .gutemusik zip or plugin folder)
+export type PluginPermission = 'audio' | 'library' | 'nav' | 'ui' | 'storage' | 'ipc';
+
 export interface PluginManifest {
   id: string;
   name: string;
@@ -15,6 +17,7 @@ export interface PluginManifest {
   author?: string;
   description?: string;
   icon?: string; // ChromeIcon name or 'custom'
+  permissions?: PluginPermission[];
 }
 
 // Stored plugin metadata
@@ -75,7 +78,7 @@ export function initPluginAPI() {
     useRef,
     useMemo,
 
-    // Tauri IPC - plugins can call backend commands
+    // Tauri IPC
     invoke,
     listen,
 
