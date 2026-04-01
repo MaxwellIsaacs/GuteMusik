@@ -1,6 +1,8 @@
+pub mod classify;
 pub mod config;
 pub mod musicbrainz;
 pub mod types;
+pub mod wikipedia;
 pub mod youtube;
 
 use std::path::{Path, PathBuf};
@@ -55,6 +57,33 @@ pub async fn downloader_search_artist(artist: String) -> Result<Vec<MbArtist>, S
 #[tauri::command]
 pub async fn downloader_get_discography(artist_id: String) -> Result<Vec<MbAlbum>, String> {
     musicbrainz::get_discography_async(&artist_id).await
+}
+
+#[tauri::command]
+pub async fn downloader_get_full_discography(
+    artist_id: String,
+    artist_name: String,
+) -> Result<Vec<types::ClassifiedAlbum>, String> {
+    // 1. MusicBrainz discography (primary source)
+    let mb_albums = musicbrainz::get_discography_async(&artist_id).await?;
+
+    // 2. Wikipedia URL from MusicBrainz relations
+    // Rate-limit: wait 1s after the discography fetch
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    let wiki_url = musicbrainz::get_artist_wikipedia_url(&artist_id).await;
+
+    // 3. Wikipedia discography (secondary source, best-effort)
+    let wiki_albums = wikipedia::get_discography(
+        &artist_name,
+        wiki_url.as_deref(),
+    )
+    .await;
+    let wiki_map = wikipedia::build_lookup(&wiki_albums);
+
+    // 4. Classify
+    let classified = classify::classify(&mb_albums, &wiki_map);
+
+    Ok(classified)
 }
 
 #[tauri::command]
@@ -224,6 +253,7 @@ pub fn downloader_retry_album(
         year: String::new(),
         genre: if genre.is_empty() { "Rock".into() } else { genre },
         tracks: None,
+        prefer_clean: false,
     }];
 
     downloader_start(app, state, albums)
@@ -542,7 +572,7 @@ fn process_single_track(
         app, album_idx, total_albums, req, track_idx, total_tracks, track_name, "searching", None,
     );
 
-    let vid_id = youtube::search_youtube(ytdlp, &req.artist, track_name);
+    let vid_id = youtube::search_youtube(ytdlp, &req.artist, track_name, req.prefer_clean);
     if vid_id.is_none() {
         remove_active_track(dl_state, album_idx, track_idx);
         emit_track_progress(

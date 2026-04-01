@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChromeIcon } from './ChromeIcon';
 import { useAudio } from '../context/AudioContext';
 import { useServer } from '../context/ServerContext';
-import { formatTime } from '../utils/formatTime';
+import { formatTime } from '@erggoed/ui';
 import { useAlbumCover } from '../hooks/useAlbumCover';
 import { ArtistLink } from './ArtistLink';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';

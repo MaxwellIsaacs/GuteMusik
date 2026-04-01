@@ -127,6 +127,39 @@ pub async fn get_discography_async(artist_id: &str) -> Result<Vec<MbAlbum>, Stri
     Ok(all_albums)
 }
 
+/// Fetch the English Wikipedia URL for an artist from their MusicBrainz
+/// URL relations.
+pub async fn get_artist_wikipedia_url(artist_id: &str) -> Option<String> {
+    let url = format!(
+        "https://musicbrainz.org/ws/2/artist/{artist_id}?inc=url-rels&fmt=json"
+    );
+    let data = mb_get_async(&url).await.ok()?;
+
+    let relations = data["relations"].as_array()?;
+    for rel in relations {
+        let rel_type = rel["type"].as_str().unwrap_or("");
+        if rel_type == "wikipedia" {
+            let resource = rel["url"]["resource"].as_str()?;
+            // Prefer English Wikipedia
+            if resource.contains("en.wikipedia.org") {
+                return Some(resource.to_string());
+            }
+        }
+    }
+
+    // Fall back to any Wikipedia link
+    for rel in relations {
+        let rel_type = rel["type"].as_str().unwrap_or("");
+        if rel_type == "wikipedia" {
+            if let Some(resource) = rel["url"]["resource"].as_str() {
+                return Some(resource.to_string());
+            }
+        }
+    }
+
+    None
+}
+
 pub fn fetch_tracklist(artist: &str, album: &str) -> Result<Vec<String>, String> {
     let query_str = format!("release:{album} AND artist:{artist}");
     let encoded = urlencoding::encode(&query_str);
@@ -169,6 +202,83 @@ pub fn fetch_tracklist(artist: &str, album: &str) -> Result<Vec<String>, String>
     Ok(tracks)
 }
 
+/// Parse artist search results from MusicBrainz JSON response.
+pub fn parse_artist_results(data: &serde_json::Value) -> Vec<MbArtist> {
+    data["artists"]
+        .as_array()
+        .map(|artists| {
+            artists
+                .iter()
+                .filter_map(|a| {
+                    Some(MbArtist {
+                        id: a["id"].as_str()?.to_string(),
+                        name: a["name"].as_str()?.to_string(),
+                        disambiguation: a["disambiguation"].as_str().unwrap_or("").to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Parse discography results from MusicBrainz JSON response.
+pub fn parse_release_groups(data: &serde_json::Value) -> Vec<MbAlbum> {
+    data["release-groups"]
+        .as_array()
+        .map(|groups| {
+            groups
+                .iter()
+                .filter_map(|rg| {
+                    let title = rg["title"].as_str()?.to_string();
+                    let id = rg["id"].as_str()?.to_string();
+                    let year = rg["first-release-date"]
+                        .as_str()
+                        .unwrap_or("")
+                        .chars()
+                        .take(4)
+                        .collect::<String>();
+                    let primary_type = rg["primary-type"]
+                        .as_str()
+                        .unwrap_or("")
+                        .to_string();
+                    let secondary_types: Vec<String> = rg["secondary-types"]
+                        .as_array()
+                        .map(|arr| {
+                            arr.iter()
+                                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    Some(MbAlbum {
+                        id,
+                        title,
+                        year,
+                        release_type: primary_type,
+                        secondary_types,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Parse tracklist from MusicBrainz release JSON response.
+pub fn parse_tracklist(data: &serde_json::Value) -> Vec<String> {
+    let mut tracks = Vec::new();
+    if let Some(media) = data["media"].as_array() {
+        for medium in media {
+            if let Some(medium_tracks) = medium["tracks"].as_array() {
+                for track in medium_tracks {
+                    if let Some(title) = track["title"].as_str() {
+                        tracks.push(title.to_string());
+                    }
+                }
+            }
+        }
+    }
+    tracks
+}
+
 pub fn fetch_cover(artist: &str, album: &str) -> Option<Vec<u8>> {
     let query_str = format!("release:{album} AND artist:{artist}");
     let encoded = urlencoding::encode(&query_str);
@@ -202,4 +312,123 @@ pub fn fetch_cover(artist: &str, album: &str) -> Option<Vec<u8>> {
     }
 
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_user_agent_header() {
+        assert!(MB_USER_AGENT.contains("GuteMusik"));
+        assert!(MB_USER_AGENT.contains("github.com"));
+    }
+
+    #[test]
+    fn test_search_artist_url() {
+        let artist = "Miles Davis";
+        let encoded = urlencoding::encode(artist);
+        let url = format!(
+            "https://musicbrainz.org/ws/2/artist/?query={encoded}&fmt=json&limit=8"
+        );
+        assert!(url.contains("Miles%20Davis"));
+        assert!(url.contains("fmt=json"));
+        assert!(url.contains("limit=8"));
+    }
+
+    #[test]
+    fn test_search_artist_parse_response() {
+        let data: serde_json::Value = serde_json::from_str(
+            r#"{
+                "artists": [
+                    {"id": "561d854a", "name": "Miles Davis", "disambiguation": "jazz trumpeter"},
+                    {"id": "fake-id", "name": "Miles Davis Quintet", "disambiguation": ""}
+                ]
+            }"#,
+        )
+        .unwrap();
+        let results = parse_artist_results(&data);
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].name, "Miles Davis");
+        assert_eq!(results[0].disambiguation, "jazz trumpeter");
+        assert_eq!(results[1].name, "Miles Davis Quintet");
+    }
+
+    #[test]
+    fn test_get_discography_url() {
+        let artist_id = "561d854a-6a28-4aa7-8c99-323e6ce46c2a";
+        let url = format!(
+            "https://musicbrainz.org/ws/2/release-group/?artist={artist_id}&fmt=json&limit=100&offset=0"
+        );
+        assert!(url.contains(artist_id));
+        assert!(url.contains("release-group"));
+        assert!(url.contains("fmt=json"));
+    }
+
+    #[test]
+    fn test_get_discography_parse() {
+        let data: serde_json::Value = serde_json::from_str(
+            r#"{
+                "release-groups": [
+                    {
+                        "id": "rg1",
+                        "title": "Kind of Blue",
+                        "first-release-date": "1959-08-17",
+                        "primary-type": "Album",
+                        "secondary-types": []
+                    },
+                    {
+                        "id": "rg2",
+                        "title": "Bitches Brew",
+                        "first-release-date": "1970-03-30",
+                        "primary-type": "Album",
+                        "secondary-types": ["Live"]
+                    }
+                ],
+                "release-group-count": 2
+            }"#,
+        )
+        .unwrap();
+        let albums = parse_release_groups(&data);
+        assert_eq!(albums.len(), 2);
+        assert_eq!(albums[0].title, "Kind of Blue");
+        assert_eq!(albums[0].year, "1959");
+        assert_eq!(albums[0].release_type, "Album");
+        assert_eq!(albums[1].secondary_types, vec!["Live"]);
+    }
+
+    #[test]
+    fn test_get_tracklist_url() {
+        let artist = "Miles Davis";
+        let album = "Kind of Blue";
+        let query_str = format!("release:{album} AND artist:{artist}");
+        let encoded = urlencoding::encode(&query_str);
+        let url = format!(
+            "https://musicbrainz.org/ws/2/release/?query={encoded}&fmt=json&limit=1"
+        );
+        assert!(url.contains("release%3AKind%20of%20Blue"));
+        assert!(url.contains("artist%3AMiles%20Davis"));
+    }
+
+    #[test]
+    fn test_get_tracklist_parse() {
+        let data: serde_json::Value = serde_json::from_str(
+            r#"{
+                "media": [
+                    {
+                        "tracks": [
+                            {"title": "So What"},
+                            {"title": "Freddie Freeloader"},
+                            {"title": "Blue in Green"}
+                        ]
+                    }
+                ]
+            }"#,
+        )
+        .unwrap();
+        let tracks = parse_tracklist(&data);
+        assert_eq!(tracks.len(), 3);
+        assert_eq!(tracks[0], "So What");
+        assert_eq!(tracks[2], "Blue in Green");
+    }
 }

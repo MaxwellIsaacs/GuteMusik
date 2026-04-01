@@ -166,3 +166,41 @@ pub async fn terminal_kill(state: State<'_, TerminalState>, id: String) -> Resul
     terminals.remove(&id);
     Ok(())
 }
+
+/// Expand ~ to $HOME in a directory path.
+pub fn expand_home(dir: &str) -> String {
+    if dir.starts_with("~/") {
+        if let Some(home) = std::env::var_os("HOME") {
+            return format!("{}{}", home.to_string_lossy(), &dir[1..]);
+        }
+    } else if dir == "~" {
+        return std::env::var("HOME").unwrap_or_else(|_| dir.to_string());
+    }
+    dir.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_terminal_state_default() {
+        let state = TerminalState::default();
+        assert!(state.terminals.lock().is_empty());
+    }
+
+    #[test]
+    fn test_expand_home_tilde_prefix() {
+        let expanded = expand_home("~/projects");
+        if std::env::var("HOME").is_ok() {
+            assert!(!expanded.starts_with('~'));
+            assert!(expanded.ends_with("/projects"));
+        }
+    }
+
+    #[test]
+    fn test_expand_home_absolute_path() {
+        let expanded = expand_home("/usr/local/bin");
+        assert_eq!(expanded, "/usr/local/bin");
+    }
+}

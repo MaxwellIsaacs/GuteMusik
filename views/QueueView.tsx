@@ -3,7 +3,7 @@ import { Trash, ListDashes, DotsSixVertical, FloppyDisk, X, CloudSlash } from '@
 import { ChromeIcon } from '../components/ChromeIcon';
 import { useServer } from '../context/ServerContext';
 import { useAudio } from '../context/AudioContext';
-import { formatTime } from '../utils/formatTime';
+import { formatTime } from '@erggoed/ui';
 import { ArtistLink } from '../components/ArtistLink';
 import { PLACEHOLDER_COVER } from '../utils/placeholders';
 

@@ -3,7 +3,7 @@ import { CaretDown, ChatTeardropText } from '@phosphor-icons/react';
 import { ChromeIcon } from './ChromeIcon';
 import { useAudio } from '../context/AudioContext';
 import { useServer } from '../context/ServerContext';
-import { formatTime } from '../utils/formatTime';
+import { formatTime } from '@erggoed/ui';
 import { AlbumArt } from './AlbumArt';
 import { ArtistLink } from './ArtistLink';
 import { fetchLyrics, findActiveLyricIndex, SyncedLyric } from '../services/lyrics';
@@ -127,7 +127,7 @@ export const FullScreenPlayer: React.FC<FullScreenPlayerProps> = ({ onCollapse, 
         if (lyricsContainerRef.current && lyrics.length > 0) {
             const activeLine = lyricsContainerRef.current.querySelector(`[data-lyric-index="${activeLyricIndex}"]`);
             if (activeLine) {
-                activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                activeLine.scrollIntoView({ behavior: 'instant', block: 'center' });
             }
         }
     }, [activeLyricIndex, lyrics.length]);
@@ -216,10 +216,10 @@ export const FullScreenPlayer: React.FC<FullScreenPlayerProps> = ({ onCollapse, 
 
             {/* Vivid atmospheric orbs */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] bg-fuchsia-400/30 rounded-full blur-[80px] animate-[float_20s_ease-in-out_infinite] will-change-transform" />
-                <div className="absolute bottom-[-10%] right-[-15%] w-[55vw] h-[55vw] bg-indigo-400/25 rounded-full blur-[80px] animate-[float_25s_ease-in-out_infinite_reverse] will-change-transform" />
-                <div className="absolute top-[20%] right-[5%] w-[35vw] h-[35vw] bg-violet-400/25 rounded-full blur-[60px] animate-[float_18s_ease-in-out_infinite_2s] will-change-transform" />
-                <div className="absolute bottom-[10%] left-[10%] w-[40vw] h-[40vw] bg-rose-400/20 rounded-full blur-[60px] animate-[float_22s_ease-in-out_infinite_4s] will-change-transform" />
+                <div className="absolute top-[-15%] left-[-10%] w-[60vw] h-[60vw] bg-fuchsia-400/30 rounded-full blur-[80px]" />
+                <div className="absolute bottom-[-10%] right-[-15%] w-[55vw] h-[55vw] bg-indigo-400/25 rounded-full blur-[80px]" />
+                <div className="absolute top-[20%] right-[5%] w-[35vw] h-[35vw] bg-violet-400/25 rounded-full blur-[60px]" />
+                <div className="absolute bottom-[10%] left-[10%] w-[40vw] h-[40vw] bg-rose-400/20 rounded-full blur-[60px]" />
             </div>
 
             {/* Collapse Button */}
@@ -365,10 +365,10 @@ export const FullScreenPlayer: React.FC<FullScreenPlayerProps> = ({ onCollapse, 
                                         <p
                                             key={i}
                                             data-lyric-index={i}
-                                            className={`text-2xl lg:text-4xl font-bold cursor-pointer hover:opacity-100 transition-all duration-500 ${
+                                            className={`text-2xl lg:text-4xl font-bold cursor-pointer ${
                                                 i === activeLyricIndex
-                                                    ? 'text-neutral-900 scale-100'
-                                                    : 'text-neutral-400/40 hover:text-neutral-600 blur-[1px] scale-[0.97]'
+                                                    ? 'text-neutral-900 opacity-100'
+                                                    : 'text-neutral-400/40 hover:text-neutral-600 opacity-60'
                                             }`}
                                             onClick={() => {
                                                 if (duration > 0 && lyrics.length > 0) {

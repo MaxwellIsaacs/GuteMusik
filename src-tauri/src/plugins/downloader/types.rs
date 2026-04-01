@@ -17,6 +17,36 @@ pub struct MbAlbum {
     pub secondary_types: Vec<String>,
 }
 
+// ── Release classification ────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "snake_case")]
+pub enum ReleaseCategory {
+    StudioAlbum,
+    Ep,
+    Live,
+    Compilation,
+    Mixtape,
+    Single,
+    Soundtrack,
+    Demo,
+    Remix,
+    Other,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClassifiedAlbum {
+    pub id: String,
+    pub title: String,
+    pub year: String,
+    #[serde(rename = "type")]
+    pub release_type: String,
+    pub secondary_types: Vec<String>,
+    pub category: ReleaseCategory,
+    pub confidence: f32,
+    pub sources: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlbumRequest {
     pub artist: String,
@@ -24,6 +54,8 @@ pub struct AlbumRequest {
     pub year: String,
     pub genre: String,
     pub tracks: Option<Vec<String>>,
+    #[serde(default)]
+    pub prefer_clean: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

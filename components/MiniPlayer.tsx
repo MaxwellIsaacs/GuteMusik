@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, CaretUp } from '@phosphor-icons/react';
 import { ChromeIcon } from './ChromeIcon';
 import { useAlbumCover } from '../hooks/useAlbumCover';
-import { formatTime } from '../utils/formatTime';
+import { formatTime } from '@erggoed/ui';
 import { fetchLyrics, findActiveLyricIndex, SyncedLyric } from '../services/lyrics';
 import { Track } from '../types';
 import { getCurrentWindow } from '@tauri-apps/api/window';

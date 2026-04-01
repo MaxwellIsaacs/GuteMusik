@@ -54,6 +54,8 @@ pub fn run() {
             #[cfg(feature = "plugins")]
             plugins::downloader::downloader_get_discography,
             #[cfg(feature = "plugins")]
+            plugins::downloader::downloader_get_full_discography,
+            #[cfg(feature = "plugins")]
             plugins::downloader::downloader_get_tracklist,
             #[cfg(feature = "plugins")]
             plugins::downloader::downloader_search_songs,

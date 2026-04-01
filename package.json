@@ -9,9 +9,11 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@erggoed/ui": "workspace:*",
     "@phosphor-icons/react": "2.1.0",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@types/three": "^0.182.0",
@@ -23,6 +25,7 @@
     "three": "^0.182.0"
   },
   "devDependencies": {
+    "vitest": "^3.2.1",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/cli": "^2.10.0",

@@ -16,6 +16,55 @@ interface MbAlbum {
   secondary_types: string[];
 }
 
+type ReleaseCategory =
+  | 'studio_album'
+  | 'ep'
+  | 'live'
+  | 'compilation'
+  | 'mixtape'
+  | 'single'
+  | 'soundtrack'
+  | 'demo'
+  | 'remix'
+  | 'other';
+
+interface ClassifiedAlbum {
+  id: string;
+  title: string;
+  year: string;
+  type: string;
+  secondary_types: string[];
+  category: ReleaseCategory;
+  confidence: number;
+  sources: string[];
+}
+
+const CATEGORY_LABELS: Record<ReleaseCategory, string> = {
+  studio_album: 'Studio Albums',
+  ep: 'EPs',
+  live: 'Live Albums',
+  compilation: 'Compilations',
+  mixtape: 'Mixtapes',
+  single: 'Singles',
+  soundtrack: 'Soundtracks',
+  demo: 'Demos',
+  remix: 'Remixes',
+  other: 'Other',
+};
+
+const CATEGORY_ORDER: ReleaseCategory[] = [
+  'studio_album',
+  'ep',
+  'mixtape',
+  'live',
+  'compilation',
+  'soundtrack',
+  'remix',
+  'demo',
+  'single',
+  'other',
+];
+
 interface ManualAlbum {
   artist: string;
   album: string;
@@ -40,7 +89,7 @@ interface SongEntry {
 }
 
 type Tab = 'search' | 'songs' | 'manual';
-type TypeFilter = 'all' | 'album' | 'ep' | 'single' | 'other';
+type CategoryFilter = ReleaseCategory | 'all';
 
 // ── Lazy loading image component ──────────────────────────────────────────
 const LazyImage: React.FC<{ src: string; alt: string; className: string }> = ({ src, alt, className }) => {
@@ -103,13 +152,14 @@ export const DownloaderView: React.FC = () => {
   const [selectedArtist, setSelectedArtist] = useState<MbArtist | null>(null);
   const [autoSelectedName, setAutoSelectedName] = useState<string | null>(null);
   const [isLoadingDiscography, setIsLoadingDiscography] = useState(false);
-  const [discography, setDiscography] = useState<MbAlbum[]>([]);
+  const [discography, setDiscography] = useState<ClassifiedAlbum[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [genreOverride, setGenreOverride] = useState('');
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
-  const [hideCompilations, setHideCompilations] = useState(true);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
   const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
   const [discographySearch, setDiscographySearch] = useState('');
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<ReleaseCategory>>(new Set());
+  const [preferClean, setPreferClean] = useState(false);
 
   // ── Manual mode state ──────────────────────────────────────────────────
   const [manualEntries, setManualEntries] = useState<ManualAlbum[]>([
@@ -219,9 +269,13 @@ export const DownloaderView: React.FC = () => {
     setIsLoadingDiscography(true);
     setDiscography([]);
     setSelected(new Set());
+    setCollapsedCategories(new Set());
 
     try {
-      const albums = await invoke<MbAlbum[]>('downloader_get_discography', { artistId: artist.id });
+      const albums = await invoke<ClassifiedAlbum[]>('downloader_get_full_discography', {
+        artistId: artist.id,
+        artistName: artist.name,
+      });
       setDiscography(albums);
     } catch (e: any) {
       onToast(`Failed to load discography: ${e}`);
@@ -232,20 +286,8 @@ export const DownloaderView: React.FC = () => {
 
   // ── Filter discography ─────────────────────────────────────────────────
   const filteredDiscography = discography.filter(a => {
-    if (hideCompilations && a.secondary_types.some(t =>
-      ['Compilation', 'Live', 'Soundtrack', 'Remix', 'DJ-mix', 'Mixtape/Street', 'Demo', 'Interview', 'Spokenword'].includes(t)
-    )) {
-      if (typeFilter !== 'all' || !a.secondary_types.includes('Mixtape/Street')) {
-        return false;
-      }
-    }
+    if (categoryFilter !== 'all' && a.category !== categoryFilter) return false;
 
-    if (typeFilter === 'album' && a.type !== 'Album') return false;
-    if (typeFilter === 'ep' && a.type !== 'EP') return false;
-    if (typeFilter === 'single' && a.type !== 'Single') return false;
-    if (typeFilter === 'other' && ['Album', 'EP', 'Single'].includes(a.type)) return false;
-
-    // Text search within discography
     if (discographySearch.trim()) {
       const q = discographySearch.trim().toLowerCase();
       if (!a.title.toLowerCase().includes(q)) return false;
@@ -294,6 +336,45 @@ export const DownloaderView: React.FC = () => {
     }
   };
 
+  // ── Download all studio albums in one click ─────────────────────────
+  const handleDownloadAllStudios = useCallback(async () => {
+    if (!selectedArtist) return;
+    const studios = discography.filter(a => a.category === 'studio_album');
+    if (studios.length === 0) {
+      onToast('No studio albums found');
+      return;
+    }
+
+    const albums = studios.map(a => ({
+      artist: selectedArtist.name,
+      album: a.title,
+      year: a.year,
+      genre: genreOverride || 'Rock',
+      tracks: null as string[] | null,
+      prefer_clean: preferClean,
+    }));
+
+    try {
+      await invoke('downloader_start', { albums });
+      onToast(`Queued ${albums.length} studio album${albums.length > 1 ? 's' : ''} for download`);
+      setSelected(new Set());
+      setJustSubmitted(true);
+      setTimeout(() => setJustSubmitted(false), 2000);
+    } catch (e: any) {
+      onToast(`Download failed: ${e}`);
+    }
+  }, [discography, selectedArtist, genreOverride, preferClean, onToast]);
+
+  // ── Toggle category collapse ────────────────────────────────────────
+  const toggleCategoryCollapse = (cat: ReleaseCategory) => {
+    setCollapsedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
   // ── Start download (search mode) ──────────────────────────────────────
   const handleDownloadSelected = useCallback(async () => {
     if (!selectedArtist) return;
@@ -309,6 +390,7 @@ export const DownloaderView: React.FC = () => {
       year: a.year,
       genre: genreOverride || 'Rock',
       tracks: null as string[] | null,
+      prefer_clean: preferClean,
     }));
 
     try {
@@ -320,7 +402,7 @@ export const DownloaderView: React.FC = () => {
     } catch (e: any) {
       onToast(`Download failed: ${e}`);
     }
-  }, [discography, selected, selectedArtist, genreOverride, onToast]);
+  }, [discography, selected, selectedArtist, genreOverride, preferClean, onToast]);
 
   // ── Search for songs on YouTube ────────────────────────────────────────
   const handleSearchSongs = useCallback(async (query?: string) => {
@@ -457,6 +539,7 @@ export const DownloaderView: React.FC = () => {
       year: e.year.trim(),
       genre: e.genre.trim() || 'Rock',
       tracks: null as string[] | null,
+      prefer_clean: preferClean,
     }));
 
     try {
@@ -468,7 +551,7 @@ export const DownloaderView: React.FC = () => {
     } catch (e: any) {
       onToast(`Download failed: ${e}`);
     }
-  }, [manualEntries, onToast]);
+  }, [manualEntries, preferClean, onToast]);
 
   // ── After all downloads complete ───────────────────────────────────────
   const handleAllComplete = useCallback(async () => {
@@ -511,25 +594,24 @@ export const DownloaderView: React.FC = () => {
   const getCoverUrl = (rgId: string) =>
     `https://coverartarchive.org/release-group/${rgId}/front-250`;
 
-  const typeLabel = (t: string) => {
-    if (!t) return '';
-    if (t === 'Album') return '';
-    return t;
-  };
-
-  // ── Type filter counts ──────────────────────────────────────────────────
-  const typeCounts = discography.reduce((acc, a) => {
-    if (hideCompilations && a.secondary_types.some(t =>
-      ['Compilation', 'Live', 'Soundtrack', 'Remix', 'DJ-mix', 'Mixtape/Street', 'Demo', 'Interview', 'Spokenword'].includes(t)
-    )) {
-      return acc;
-    }
-    const key = ['Album', 'EP', 'Single'].includes(a.type) ? a.type.toLowerCase() : 'other';
-    acc[key] = (acc[key] || 0) + 1;
+  // ── Category counts ──────────────────────────────────────────────────
+  const categoryCounts = discography.reduce((acc, a) => {
+    acc[a.category] = (acc[a.category] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const totalVisibleCount = Object.values(typeCounts).reduce((sum, n) => sum + n, 0);
+  // Categories that actually have albums
+  const activeCategories = CATEGORY_ORDER.filter(cat => (categoryCounts[cat] || 0) > 0);
+
+  const totalCount = discography.length;
+  const studioCount = categoryCounts['studio_album'] || 0;
+
+  // Group filtered albums by category for display
+  const groupedAlbums = CATEGORY_ORDER.reduce((acc, cat) => {
+    const albums = filteredDiscography.filter(a => a.category === cat);
+    if (albums.length > 0) acc.push({ category: cat, albums });
+    return acc;
+  }, [] as { category: ReleaseCategory; albums: ClassifiedAlbum[] }[]);
 
   return (
     <div className="pb-48">
@@ -688,14 +770,14 @@ export const DownloaderView: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => { setSelectedArtist(null); setAutoSelectedName(null); setDiscography([]); setSelected(new Set()); setDiscographySearch(''); }}
+                        onClick={() => { setSelectedArtist(null); setAutoSelectedName(null); setDiscography([]); setSelected(new Set()); setDiscographySearch(''); setCategoryFilter('all'); }}
                         className="text-xs text-white/30 hover:text-white transition-colors"
                       >
                         &larr; Back
                       </button>
                       <h3 className="text-lg font-bold">{selectedArtist.name}</h3>
                       <span className="text-xs text-white/30">
-                        {discography.length} releases
+                        {totalCount} releases
                         {selected.size > 0 && (
                           <> &middot; <span className="text-purple-400">{selected.size} selected</span></>
                         )}
@@ -710,6 +792,19 @@ export const DownloaderView: React.FC = () => {
                         : 'Select All'}
                     </button>
                   </div>
+
+                  {/* Download All Studio Albums button */}
+                  {studioCount > 0 && (
+                    <button
+                      onClick={handleDownloadAllStudios}
+                      className="w-full py-3.5 bg-white text-black rounded-xl font-bold text-sm hover:bg-white/90 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 2v8m0 0l-3-3m3 3l3-3M3 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Download All {studioCount} Studio Album{studioCount !== 1 ? 's' : ''}
+                    </button>
+                  )}
 
                   {/* Filter within discography */}
                   <div className="relative">
@@ -730,34 +825,38 @@ export const DownloaderView: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Type filters + options */}
+                  {/* Category filters + options */}
                   <div className="flex items-center gap-3 flex-wrap">
-                    <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/5">
-                      {(['all', 'album', 'ep', 'single', 'other'] as TypeFilter[]).map(f => {
-                        const count = f === 'all' ? totalVisibleCount : (typeCounts[f] || 0);
-                        return (
-                          <button
-                            key={f}
-                            onClick={() => setTypeFilter(f)}
-                            className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                              typeFilter === f ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'
-                            }`}
-                          >
-                            {f === 'all' ? 'All' : f.toUpperCase()}
-                            {count > 0 ? ` (${count})` : ''}
-                          </button>
-                        );
-                      })}
+                    <div className="flex gap-1 bg-white/5 rounded-lg p-1 border border-white/5 flex-wrap">
+                      <button
+                        onClick={() => setCategoryFilter('all')}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                          categoryFilter === 'all' ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'
+                        }`}
+                      >
+                        All ({totalCount})
+                      </button>
+                      {activeCategories.map(cat => (
+                        <button
+                          key={cat}
+                          onClick={() => setCategoryFilter(cat)}
+                          className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                            categoryFilter === cat ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/60'
+                          }`}
+                        >
+                          {CATEGORY_LABELS[cat]} ({categoryCounts[cat]})
+                        </button>
+                      ))}
                     </div>
 
                     <label className="flex items-center gap-2 text-xs text-white/30 cursor-pointer select-none">
                       <input
                         type="checkbox"
-                        checked={hideCompilations}
-                        onChange={e => setHideCompilations(e.target.checked)}
+                        checked={preferClean}
+                        onChange={e => setPreferClean(e.target.checked)}
                         className="accent-purple-500"
                       />
-                      Hide compilations/live/soundtracks
+                      Clean
                     </label>
 
                     <div className="flex items-center gap-2 ml-auto">
@@ -772,54 +871,100 @@ export const DownloaderView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Album grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {filteredDiscography.map((album, idx) => {
-                      const isSelected = selected.has(album.id);
-                      return (
-                        <button
-                          key={album.id}
-                          onClick={(e) => toggleSelect(album.id, idx, e.shiftKey)}
-                          className={`flex items-center gap-4 p-3 rounded-xl border text-left transition-all ${
-                            isSelected
-                              ? 'bg-white/10 border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.05)]'
-                              : 'bg-white/[0.02] border-white/5 hover:bg-white/5'
-                          }`}
-                        >
-                          <LazyImage
-                            src={getCoverUrl(album.id)}
-                            alt=""
-                            className="w-14 h-14 rounded-lg bg-white/5 flex-shrink-0 overflow-hidden"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold truncate">{album.title}</div>
-                            <div className="text-xs text-white/30 flex items-center gap-2 mt-0.5">
-                              {album.year && <span>{album.year}</span>}
-                              {typeLabel(album.type) && (
-                                <span className="px-1.5 py-0.5 bg-white/5 rounded text-[10px] uppercase tracking-wider">
-                                  {typeLabel(album.type)}
-                                </span>
-                              )}
-                              {album.secondary_types.length > 0 && (
-                                <span className="text-[10px] text-white/20">
-                                  {album.secondary_types.join(', ')}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                            isSelected ? 'bg-purple-500 border-purple-500' : 'border-white/20'
-                          }`}>
-                            {isSelected && (
-                              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  {/* Albums grouped by category */}
+                  {groupedAlbums.map(({ category: cat, albums }) => {
+                    const isCollapsed = collapsedCategories.has(cat);
+                    const selectedInCat = albums.filter(a => selected.has(a.id)).length;
+                    const allSelectedInCat = selectedInCat === albums.length;
+                    return (
+                      <div key={cat}>
+                        {/* Category header */}
+                        {categoryFilter === 'all' && (
+                          <div className="flex items-center gap-3 mb-3">
+                            <button
+                              onClick={() => toggleCategoryCollapse(cat)}
+                              className="flex items-center gap-2 text-xs font-bold tracking-[0.15em] text-white/40 uppercase hover:text-white/60 transition-colors"
+                            >
+                              <svg
+                                width="10" height="10" viewBox="0 0 10 10" fill="none"
+                                className={`transition-transform ${isCollapsed ? '' : 'rotate-90'}`}
+                              >
+                                <path d="M3 1.5L7 5L3 8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
+                              {CATEGORY_LABELS[cat]} ({albums.length})
+                            </button>
+                            {selectedInCat > 0 && (
+                              <span className="text-[10px] text-purple-400">{selectedInCat} selected</span>
                             )}
+                            <button
+                              onClick={() => {
+                                const ids = albums.map(a => a.id);
+                                setSelected(prev => {
+                                  const next = new Set(prev);
+                                  if (allSelectedInCat) {
+                                    ids.forEach(id => next.delete(id));
+                                  } else {
+                                    ids.forEach(id => next.add(id));
+                                  }
+                                  return next;
+                                });
+                              }}
+                              className="text-[10px] text-white/20 hover:text-white/50 transition-colors"
+                            >
+                              {allSelectedInCat ? 'deselect' : 'select all'}
+                            </button>
                           </div>
-                        </button>
-                      );
-                    })}
-                  </div>
+                        )}
+
+                        {/* Album grid for this category */}
+                        {!isCollapsed && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {albums.map((album, idx) => {
+                              const isSelected = selected.has(album.id);
+                              const globalIdx = filteredDiscography.indexOf(album);
+                              return (
+                                <button
+                                  key={album.id}
+                                  onClick={(e) => toggleSelect(album.id, globalIdx, e.shiftKey)}
+                                  className={`flex items-center gap-4 p-3 rounded-xl border text-left transition-all ${
+                                    isSelected
+                                      ? 'bg-white/10 border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.05)]'
+                                      : 'bg-white/[0.02] border-white/5 hover:bg-white/5'
+                                  }`}
+                                >
+                                  <LazyImage
+                                    src={getCoverUrl(album.id)}
+                                    alt=""
+                                    className="w-14 h-14 rounded-lg bg-white/5 flex-shrink-0 overflow-hidden"
+                                  />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-sm font-semibold truncate">{album.title}</div>
+                                    <div className="text-xs text-white/30 flex items-center gap-2 mt-0.5">
+                                      {album.year && <span>{album.year}</span>}
+                                      {album.sources.length > 1 && (
+                                        <span className="px-1.5 py-0.5 bg-green-500/10 text-green-400/60 rounded text-[10px]" title={`Confirmed by ${album.sources.join(' + ')}`}>
+                                          verified
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
+                                    isSelected ? 'bg-purple-500 border-purple-500' : 'border-white/20'
+                                  }`}>
+                                    {isSelected && (
+                                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                        <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                      </svg>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   {filteredDiscography.length === 0 && (
                     <div className="text-center py-8 text-white/20 text-sm">
