@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vinyl Export — Spotify Library Exporter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Text:ital@0;1&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --green: #1DB954;
+  --green-dim: #1aa34a;
+  --green-glow: rgba(29, 185, 84, 0.15);
+  --green-glow-strong: rgba(29, 185, 84, 0.35);
+  --bg-deep: #0a0a0c;
+  --bg-card: #121216;
+  --bg-card-hover: #1a1a20;
+  --bg-surface: #16161b;
+  --text-primary: #e8e8ed;
+  --text-secondary: #8a8a96;
+  --text-dim: #55555f;
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font-display: 'DM Serif Text', Georgia, serif;
+  --font-body: 'Outfit', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+html { font-size: 16px; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Noise texture overlay ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Ambient glow ── */
+.ambient-glow {
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--green-glow) 0%, transparent 70%);
+  top: -200px;
+  right: -100px;
+  pointer-events: none;
+  opacity: 0.4;
+  animation: drift 20s ease-in-out infinite alternate;
+}
+.ambient-glow-2 {
+  position: fixed;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(29, 185, 84, 0.08) 0%, transparent 70%);
+  bottom: -100px;
+  left: -100px;
+  pointer-events: none;
+  animation: drift 25s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(40px, 30px) scale(1.1); }
+}
+
+/* ── Layout ── */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ── */
+.header {
+  padding: 60px 0 40px;
+  text-align: center;
+}
+.header .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.header .logo-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px var(--green-glow-strong);
+}
+.header .logo-icon svg { width: 20px; height: 20px; fill: #000; }
+.header h1 {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.header p {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  font-weight: 300;
+  margin-top: 8px;
+  letter-spacing: 0.01em;
+}
+
+/* ── Login Section ── */
+.login-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 0;
+}
+.login-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 56px 48px;
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+}
+.login-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 400;
+  margin-bottom: 12px;
+}
+.login-card p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 32px;
+  font-weight: 300;
+}
+.login-card .scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+.login-card .scope-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 50px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+}
+.btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+.btn-spotify {
+  background: var(--green);
+  color: #000;
+  box-shadow: 0 4px 24px rgba(29, 185, 84, 0.3);
+}
+.btn-spotify:hover {
+  background: #22d35e;
+  box-shadow: 0 6px 32px rgba(29, 185, 84, 0.45);
+  transform: translateY(-1px);
+}
+.btn-spotify:active { transform: translateY(0); }
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-hover);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+.btn-ghost:hover { color: var(--text-primary); }
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.toolbar-left h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 400;
+}
+.toolbar .count {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--green);
+  background: var(--green-glow);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Progress ── */
+.progress-section {
+  padding: 80px 0;
+  text-align: center;
+}
+.progress-ring-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 32px;
+}
+.progress-ring {
+  transform: rotate(-90deg);
+}
+.progress-ring-bg {
+  fill: none;
+  stroke: rgba(255,255,255,0.05);
+  stroke-width: 4;
+}
+.progress-ring-fill {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 339.292;
+  stroke-dashoffset: 339.292;
+  transition: stroke-dashoffset 0.4s ease;
+  filter: drop-shadow(0 0 6px var(--green-glow-strong));
+}
+.progress-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.progress-pct {
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.progress-sub {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+.progress-status {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 300;
+}
+.progress-status span {
+  color: var(--green);
+  font-weight: 500;
+}
+
+/* ── Album grid ── */
+.album-grid {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 60px;
+}
+.album-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 140px 100px 60px;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-card);
+  padding: 0 20px;
+  height: 64px;
+  transition: background 0.15s;
+}
+.album-row:hover { background: var(--bg-card-hover); }
+.album-row.header-row {
+  height: 44px;
+  background: var(--bg-surface);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.album-row.header-row span {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.album-art {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  object-fit: cover;
+}
+.album-art-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--bg-surface), rgba(29,185,84,0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.album-art-placeholder svg { width: 16px; height: 16px; fill: var(--text-dim); }
+.album-info {
+  min-width: 0;
+  padding: 0 16px;
+}
+.album-title {
+  font-weight: 500;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.album-artist {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 300;
+}
+.album-year {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.album-genre {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.album-tracks {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-align: right;
+}
+
+/* ── Search / Filter ── */
+.search-bar {
+  position: relative;
+  margin: 16px 0;
+}
+.search-bar input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px 12px 44px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-bar input::placeholder { color: var(--text-dim); }
+.search-bar input:focus { border-color: rgba(29,185,84,0.4); }
+.search-bar svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  fill: var(--text-dim);
+}
+
+/* ── User chip ── */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 4px 14px 4px 4px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.user-chip img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.user-chip .user-name { font-weight: 500; color: var(--text-primary); }
+
+/* ── Config Banner ── */
+.config-banner {
+  background: rgba(255, 180, 0, 0.08);
+  border: 1px solid rgba(255, 180, 0, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+  color: #ffb400;
+  line-height: 1.5;
+}
+.config-banner code {
+  font-family: var(--font-mono);
+  background: rgba(0,0,0,0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-card);
+  border: 1px solid var(--green);
+  border-radius: var(--radius-sm);
+  padding: 12px 24px;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeInUp 0.5s ease forwards; }
+.fade-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.fade-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .header h1 { font-size: 2rem; }
+  .login-card { padding: 40px 28px; }
+  .album-row { grid-template-columns: 44px 1fr 60px; height: 58px; padding: 0 12px; }
+  .album-genre, .album-year { display: none; }
+  .toolbar { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+/* ── Hidden ── */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="ambient-glow"></div>
+<div class="ambient-glow-2"></div>
+<div class="toast" id="toast"></div>
+
+<div class="container">
+  <!-- Header (always visible) -->
+  <header class="header fade-in">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/></svg>
+      </div>
+      <span style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-dim);letter-spacing:0.05em;">VINYL EXPORT</span>
+    </div>
+    <h1>Spotify Library Exporter</h1>
+    <p>Export your saved albums & tracks as JSON for offline downloading</p>
+  </header>
+
+  <!-- Login View -->
+  <section id="view-login" class="login-section">
+    <div class="login-card fade-in fade-in-delay-1">
+      <h2>Connect Your Library</h2>
+      <p>Sign in with Spotify to scan your saved albums and liked tracks. Nothing is stored &mdash; everything runs in your browser.</p>
+      <div class="scopes">
+        <span class="scope-tag">user-library-read</span>
+        <span class="scope-tag">user-read-private</span>
+      </div>
+      <button class="btn btn-spotify" onclick="startAuth()">
+        <svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        Login with Spotify
+      </button>
+    </div>
+
+    <div id="config-notice" class="config-banner hidden" style="max-width:440px;margin-top:20px;">
+      Set your Spotify Client ID at the top of <code>index.html</code> &mdash; variable <code>SPOTIFY_CLIENT_ID</code>. Create one at <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:#1DB954;">developer.spotify.com</a> and add your URL as a redirect URI.
+    </div>
+  </section>
+
+  <!-- Loading / Progress View -->
+  <section id="view-progress" class="progress-section hidden">
+    <div class="progress-ring-container fade-in">
+      <svg class="progress-ring" width="120" height="120">
+        <circle class="progress-ring-bg" cx="60" cy="60" r="54"/>
+        <circle class="progress-ring-fill" id="progress-fill" cx="60" cy="60" r="54"/>
+      </svg>
+      <div class="progress-label">
+        <span class="progress-pct" id="progress-pct">0%</span>
+        <span class="progress-sub" id="progress-sub">loading</span>
+      </div>
+    </div>
+    <p class="progress-status" id="progress-status">Fetching your <span>saved albums</span>...</p>
+  </section>
+
+  <!-- Library View -->
+  <section id="view-library" class="hidden">
+    <div class="toolbar fade-in">
+      <div class="toolbar-left">
+        <h2>Your Library</h2>
+        <span class="count" id="album-count">0 albums</span>
+        <div class="user-chip" id="user-chip" style="display:none;"></div>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-secondary" onclick="exportJSON()" id="btn-export">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/></svg>
+          Export JSON
+        </button>
+        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="search-bar fade-in fade-in-delay-1">
+      <svg viewBox="0 0 20 20"><path d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/></svg>
+      <input type="text" id="search-input" placeholder="Filter by artist or album..." oninput="filterAlbums()">
+    </div>
+
+    <div class="album-grid fade-in fade-in-delay-2" id="album-grid">
+      <div class="album-row header-row">
+        <span></span>
+        <span style="padding-left:16px;">TITLE / ARTIST</span>
+        <span>YEAR</span>
+        <span>GENRE</span>
+        <span style="text-align:right">TRACKS</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIGURE YOUR SPOTIFY CLIENT ID HERE                      ║
+// ╚══════════════════════════════════════════════════════════════╝
+const SPOTIFY_CLIENT_ID = '2c36fc9b2c3f4e45ae9002e2e72c9ec2';
+
+// Spotify OAuth config
+const SCOPES = 'user-library-read user-read-private';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+const AUTH_URL = 'https://accounts.spotify.com/authorize';
+const TOKEN_URL = 'https://accounts.spotify.com/api/token';
+const API = 'https://api.spotify.com/v1';
+
+let accessToken = null;
+let allAlbums = [];
+let userProfile = null;
+
+// ── PKCE Helpers ──
+
+function generateRandomString(length) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  const arr = new Uint8Array(length);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => chars[b % chars.length]).join('');
+}
+
+async function sha256(plain) {
+  const data = new TextEncoder().encode(plain);
+  return crypto.subtle.digest('SHA-256', data);
+}
+
+function base64urlencode(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// ── Auth Flow ──
+
+async function startAuth() {
+  if (SPOTIFY_CLIENT_ID === 'YOUR_CLIENT_ID_HERE') {
+    document.getElementById('config-notice').classList.remove('hidden');
+    return;
+  }
+
+  const verifier = generateRandomString(64);
+  sessionStorage.setItem('pkce_verifier', verifier);
+  const challenge = base64urlencode(await sha256(verifier));
+
+  const params = new URLSearchParams({
+    client_id: SPOTIFY_CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: REDIRECT_URI,
+    scope: SCOPES,
+    code_challenge_method: 'S256',
+    code_challenge: challenge,
+  });
+
+  window.location.href = `${AUTH_URL}?${params}`;
+}
+
+async function handleCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return false;
+
+  const verifier = sessionStorage.getItem('pkce_verifier');
+  if (!verifier) return false;
+
+  // Clean URL
+  window.history.replaceState({}, '', window.location.pathname);
+
+  const body = new URLSearchParams({
+    client_id: SPOTIFY_CLIENT_ID,
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: REDIRECT_URI,
+    code_verifier: verifier,
+  });
+
+  const resp = await fetch(TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
+
+  if (!resp.ok) return false;
+  const data = await resp.json();
+  accessToken = data.access_token;
+  sessionStorage.removeItem('pkce_verifier');
+  return true;
+}
+
+// ── Spotify API ──
+
+async function apiFetch(url) {
+  const resp = await fetch(url, {
+    headers: { 'Authorization': `Bearer ${accessToken}` },
+  });
+  if (!resp.ok) throw new Error(`API ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+async function fetchAllPages(url, extractor) {
+  let items = [];
+  let next = url;
+  while (next) {
+    const data = await apiFetch(next);
+    items.push(...extractor(data));
+    next = data.next;
+  }
+  return items;
+}
+
+async function fetchProfile() {
+  userProfile = await apiFetch(`${API}/me`);
+  return userProfile;
+}
+
+// ── Library Fetching ──
+
+function updateProgress(pct, label, sub) {
+  const circumference = 2 * Math.PI * 54;
+  const offset = circumference - (pct / 100) * circumference;
+  document.getElementById('progress-fill').style.strokeDashoffset = offset;
+  document.getElementById('progress-pct').textContent = Math.round(pct) + '%';
+  if (sub) document.getElementById('progress-sub').textContent = sub;
+  if (label) document.getElementById('progress-status').innerHTML = label;
+}
+
+async function fetchLibrary() {
+  showView('progress');
+  updateProgress(0, 'Fetching your <span>profile</span>...', 'connecting');
+
+  await fetchProfile();
+  showUserChip();
+
+  // Fetch saved albums
+  updateProgress(5, 'Fetching your <span>saved albums</span>...', 'albums');
+  const savedAlbums = await fetchAllPages(
+    `${API}/me/albums?limit=50`,
+    data => data.items.map(item => item.album)
+  );
+
+  const albumCount = savedAlbums.length;
+  updateProgress(40, `Found <span>${albumCount} saved albums</span>. Fetching <span>liked tracks</span>...`, 'tracks');
+
+  // Fetch liked tracks
+  const likedTracks = await fetchAllPages(
+    `${API}/me/tracks?limit=50`,
+    data => data.items.map(item => item.track)
+  );
+
+  updateProgress(70, `Processing <span>${likedTracks.length} liked tracks</span>...`, 'processing');
+
+  // Build album map from saved albums
+  const albumMap = new Map();
+
+  for (const album of savedAlbums) {
+    const key = `${album.artists[0]?.name}:::${album.name}`;
+    if (!albumMap.has(key)) {
+      const trackNames = album.tracks?.items
+        ? album.tracks.items.map(t => t.name)
+        : [];
+      albumMap.set(key, {
+        artist: album.artists[0]?.name || 'Unknown',
+        album: album.name,
+        year: (album.release_date || '').slice(0, 4),
+        genre: '', // Spotify albums don't have genres; we'll try artist genres
+        tracks: trackNames,
+        image: album.images?.[1]?.url || album.images?.[0]?.url || null,
+        artistId: album.artists[0]?.id || null,
+        source: 'album',
+      });
+    }
+  }
+
+  // Group liked tracks by album, add any albums not already captured
+  for (const track of likedTracks) {
+    const album = track.album;
+    if (!album) continue;
+    const key = `${album.artists[0]?.name}:::${album.name}`;
+    if (albumMap.has(key)) {
+      // Album already in map; ensure this track is in the list
+      const entry = albumMap.get(key);
+      if (!entry.tracks.includes(track.name)) {
+        entry.tracks.push(track.name);
+      }
+    } else {
+      albumMap.set(key, {
+        artist: album.artists[0]?.name || 'Unknown',
+        album: album.name,
+        year: (album.release_date || '').slice(0, 4),
+        genre: '',
+        tracks: [track.name],
+        image: album.images?.[1]?.url || album.images?.[0]?.url || null,
+        artistId: album.artists[0]?.id || null,
+        source: 'track',
+      });
+    }
+  }
+
+  updateProgress(85, 'Fetching <span>artist genres</span>...', 'genres');
+
+  // Batch-fetch artist genres (50 at a time)
+  const artistIds = [...new Set([...albumMap.values()].map(a => a.artistId).filter(Boolean))];
+  const artistGenres = new Map();
+  for (let i = 0; i < artistIds.length; i += 50) {
+    const batch = artistIds.slice(i, i + 50);
+    try {
+      const data = await apiFetch(`${API}/artists?ids=${batch.join(',')}`);
+      for (const artist of data.artists) {
+        if (artist?.genres?.length) {
+          // Capitalize first genre nicely
+          const genre = artist.genres[0].replace(/\b\w/g, c => c.toUpperCase());
+          artistGenres.set(artist.id, genre);
+        }
+      }
+    } catch (e) {
+      console.warn('Genre fetch failed for batch', e);
+    }
+    updateProgress(85 + (i / artistIds.length) * 12, 'Fetching <span>artist genres</span>...', 'genres');
+  }
+
+  // Apply genres
+  for (const entry of albumMap.values()) {
+    if (entry.artistId && artistGenres.has(entry.artistId)) {
+      entry.genre = artistGenres.get(entry.artistId);
+    }
+  }
+
+  allAlbums = [...albumMap.values()].sort((a, b) =>
+    a.artist.localeCompare(b.artist) || a.album.localeCompare(b.album)
+  );
+
+  updateProgress(100, `Loaded <span>${allAlbums.length} albums</span>`, 'done');
+  await sleep(600);
+
+  showView('library');
+  renderAlbums(allAlbums);
+  document.getElementById('album-count').textContent = `${allAlbums.length} albums`;
+}
+
+// ── Rendering ──
+
+function renderAlbums(albums) {
+  const grid = document.getElementById('album-grid');
+  // Remove all rows except header
+  grid.querySelectorAll('.album-row:not(.header-row)').forEach(r => r.remove());
+
+  const fragment = document.createDocumentFragment();
+  for (const a of albums) {
+    const row = document.createElement('div');
+    row.className = 'album-row';
+    row.innerHTML = `
+      ${a.image
+        ? `<img class="album-art" src="${a.image}" alt="" loading="lazy">`
+        : `<div class="album-art-placeholder"><svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div>`
+      }
+      <div class="album-info">
+        <div class="album-title">${esc(a.album)}</div>
+        <div class="album-artist">${esc(a.artist)}</div>
+      </div>
+      <span class="album-year">${a.year || '—'}</span>
+      <span class="album-genre">${esc(a.genre) || '—'}</span>
+      <span class="album-tracks">${a.tracks.length}</span>
+    `;
+    fragment.appendChild(row);
+  }
+  grid.appendChild(fragment);
+}
+
+function filterAlbums() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  if (!q) {
+    renderAlbums(allAlbums);
+    document.getElementById('album-count').textContent = `${allAlbums.length} albums`;
+    return;
+  }
+  const filtered = allAlbums.filter(a =>
+    a.artist.toLowerCase().includes(q) ||
+    a.album.toLowerCase().includes(q) ||
+    a.genre.toLowerCase().includes(q)
+  );
+  renderAlbums(filtered);
+  document.getElementById('album-count').textContent = `${filtered.length} albums`;
+}
+
+function showUserChip() {
+  if (!userProfile) return;
+  const chip = document.getElementById('user-chip');
+  const img = userProfile.images?.[0]?.url;
+  chip.innerHTML = `
+    ${img ? `<img src="${img}" alt="">` : ''}
+    <span class="user-name">${esc(userProfile.display_name || userProfile.id)}</span>
+  `;
+  chip.style.display = 'inline-flex';
+}
+
+// ── Export ──
+
+function exportJSON() {
+  const exportData = allAlbums.map(a => ({
+    artist: a.artist,
+    album: a.album,
+    year: a.year,
+    genre: a.genre,
+    tracks: a.tracks,
+  }));
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `spotify-library-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  showToast(`Exported ${exportData.length} albums as JSON`);
+}
+
+// ── Util ──
+
+function showView(name) {
+  document.getElementById('view-login').classList.toggle('hidden', name !== 'login');
+  document.getElementById('view-progress').classList.toggle('hidden', name !== 'progress');
+  document.getElementById('view-library').classList.toggle('hidden', name !== 'library');
+}
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function logout() {
+  accessToken = null;
+  allAlbums = [];
+  userProfile = null;
+  showView('login');
+}
+
+// ── Init ──
+
+(async () => {
+  const loggedIn = await handleCallback();
+  if (loggedIn) {
+    try {
+      await fetchLibrary();
+    } catch (e) {
+      console.error(e);
+      showToast('Error fetching library: ' + e.message);
+      showView('login');
+    }
+  } else {
+    showView('login');
+  }
+})();
+</script>
+</body>
+</html>
